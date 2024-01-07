@@ -1,0 +1,3 @@
+- keep the zero/one registers as constants, do not allow overwriting of them
+- convert ugly big switch cases into tables (like in compare.cpp)
+- preferably have a separate thing for formats and for execution?

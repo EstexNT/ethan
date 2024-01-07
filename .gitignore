@@ -1,0 +1,7 @@
+*.o
+*.exe
+*.s
+*.pdf
+ia64emu
+*.bin
+cpu.log
