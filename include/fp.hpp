@@ -10,6 +10,9 @@ public:
     Ia64Float(uint128_t n) {
         val = n;
     }
+    Ia64Float operator=(Ia64Float f) {
+        val = f.val;
+    }
 
     Ia64Float() {
         val = 0;

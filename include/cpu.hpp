@@ -6,24 +6,66 @@
 
 class Ia64Regs {
 public:
+    // there is a better way to do this...
     struct Gpr {
         #define GPR_ZEROREG 0
-        uint64_t val;
-        uint64_t operator=(uint64_t v) {
-            return (val = v);
+        struct GprVal {
+            uint64_t val;
+            bool nat = false;
+            int id;
+            uint64_t operator=(uint64_t v) {
+                if (id == GPR_ZEROREG) {
+                    printf("trying to write zero gpr\n");
+                    return 0;
+                }
+                return (val = v);
+            }
+        } _val[128];
+        GprVal &operator[](int idx) {
+            _val[idx].id = idx;
+            return _val[idx];
         }
-        bool nat = false;
-    } gpr[128]; // general reg
+    } gpr; // general reg
     #define FPR_ZEROREG 0
     #define FPR_ONEREG  1
-    Ia64Float fpr[128]; // floating reg
+    struct Fpr {
+        struct FprVal : Ia64Float {
+            int id;
+            Ia64Float operator=(Ia64Float f) {
+                if (id == FPR_ZEROREG) {
+                    printf("trying to write zero fpr\n");
+                    return Ia64Float(0);
+                }
+                if (id == FPR_ONEREG) {
+                    printf("trying to write one fpr\n");
+                    return Ia64Float(1);
+                }
+                return Ia64Float::operator=(f);
+            }
+        } _val[128];
+        FprVal &operator[](int idx) {
+            _val[idx].id = idx;
+            return _val[idx];
+        }
+    } fpr; // floating reg
     struct Pr {
         #define PR_ONEREG 0
-        bool val;
-        bool operator=(bool v) {
-            return (val = v);
+        struct PrVal {
+            bool val;
+            int id;
+            bool operator=(bool v) {
+                if (id == PR_ONEREG) {
+                    printf("trying to write one pr\n");
+                    return 1;
+                }
+                return (val = v);
+            }
+        } _val[64];
+        PrVal &operator[](int idx) {
+            _val[idx].id = idx;
+            return _val[idx];
         }
-    } pr[64]; // predicate reg
+    } pr; // predicate reg
 
     struct Br {
         uint64_t val;
