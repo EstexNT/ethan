@@ -36,7 +36,7 @@ void Handle(Ia64Bundle *bundle, Ia64Cpu *cpu, uint64_t slot) {
                 uint32_t imm21 = (i << 20) | (imm20b);
 
                 printf("(qp %d) nop.b %08x\n", qp, imm21);
-                if (cpu->regs.GetPR(qp)) {
+                if (cpu->regs.pr[qp].val) {
                     // no operation
                 }
                 return;
@@ -62,7 +62,7 @@ void Handle(Ia64Bundle *bundle, Ia64Cpu *cpu, uint64_t slot) {
                     GetBranchCacheDeallocHintCompleterStr(d),
                     tmp_IP
                     );
-                    bool tmp_taken = cpu->regs.GetPR(qp);
+                    bool tmp_taken = cpu->regs.pr[qp].val;
                     if (tmp_taken) {
                         cpu->branched = true;
                         cpu->regs.ip = tmp_IP;
@@ -109,7 +109,7 @@ void Handle(Ia64Bundle *bundle, Ia64Cpu *cpu, uint64_t slot) {
                     GetBranchCacheDeallocHintCompleterStr(d),
                     b1, tmp_IP);
             
-            bool tmp_taken = cpu->regs.GetPR(qp);
+            bool tmp_taken = cpu->regs.pr[qp].val;
             if (tmp_taken) {
                 cpu->regs.br[b1] = cpu->regs.ip + 0x10;
                 

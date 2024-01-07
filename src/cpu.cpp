@@ -76,7 +76,7 @@ void Ia64Cpu::run(void) {
 
     // TODO:
     // write a bootloader so that the stack is set up properly (instead of in emu)
-    regs.gpr[12] = STACK_VALUE + STACK_SIZE - 128;
+    regs.gpr[12] = uint64_t(STACK_VALUE + STACK_SIZE - 128);
     Ia64Bundle bundle {0};
 
     while (true) {

@@ -20,6 +20,13 @@ public:
                 }
                 return (val = v);
             }
+            bool operator=(bool b) {
+                if (id == GPR_ZEROREG) {
+                    printf("trying to write nat to zero gpr\n");
+                    return 0;
+                }
+                return (nat = b);
+            }
         } _val[128];
         GprVal &operator[](int idx) {
             _val[idx].id = idx;
@@ -218,13 +225,15 @@ EC = 66         # Epilog Count Register
     #pragma pack(pop)
 
     Ia64Regs() {
-        gpr[GPR_ZEROREG] = 0;
-        fpr[FPR_ZEROREG] = 0;
-        fpr[FPR_ONEREG] = 1;
-        pr[PR_ONEREG] = 1;
+        gpr[GPR_ZEROREG].val = uint64_t(0);
+        gpr[GPR_ZEROREG].nat = false;
+        fpr[FPR_ZEROREG].val = 0;
+        fpr[FPR_ONEREG].val = 1;
+        pr[PR_ONEREG].val = 1;
         ip = 0; // TODO: proper bootloader
         for (int i = 1; i < NELEM(gpr); i++) {
-            gpr[i] = 0;
+            gpr[i].val = uint64_t(0);
+            gpr[i].nat = false;
         }
         for (int i = 2; i < NELEM(fpr); i++) {
             fpr[i] = 0;
@@ -245,12 +254,6 @@ EC = 66         # Epilog Count Register
         // If r1 targets an out-of-frame stacked register (as defined by CFM), an illegal operation 
         // fault is delivered, and this function does not return.
         // whatever ^^^^ is: TODO
-    }
-    bool GetPR(uint8_t r) {
-        if (r == PR_ONEREG) {
-            return true;
-        }
-        return pr[r].val;
     }
 };
 

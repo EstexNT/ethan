@@ -21,10 +21,10 @@ void Handle(Ia64Bundle *bundle, Ia64Cpu *cpu, uint64_t slot1, uint64_t slot2) {
                                 | (imm5c << 16) | (imm9d << 7) | (imm7b);
 
                 printf("(qp %d) movl r%d = 0x%016" PRIx64 "\n", qp, r1, imm64);
-                if (cpu->regs.GetPR(qp)) {
+                if (cpu->regs.pr[qp].val) {
                     cpu->regs.CheckTargetRegister(r1);
                     cpu->regs.gpr[r1] = imm64;
-                    cpu->regs.gpr[r1].nat = false;
+                    cpu->regs.gpr[r1] = false;
                 }
             } else {
                 fprintf(stderr, "reserved lxunit inst movl vc=1\n");

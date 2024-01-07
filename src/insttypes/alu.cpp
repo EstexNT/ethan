@@ -24,11 +24,11 @@ void MMALUHandle(Ia64Bundle *bundle, Ia64Cpu *cpu, uint64_t slot) {
                 if ((x4 == 0xb) && (x2b == 3)) {
                     DEFINEA3VARS;
                     printf("(qp %d) xor r%d = %d(%d), r%d\n", qp, r1, imm, imm8, r3);
-                    if (cpu->regs.GetPR(qp)) {
+                    if (cpu->regs.pr[qp].val) {
                         cpu->regs.CheckTargetRegister(r1);
                         uint64_t tmp_src = imm;
                         cpu->regs.gpr[r1] = tmp_src ^ cpu->regs.gpr[r3].val;
-                        cpu->regs.gpr[r1].nat = cpu->regs.gpr[r3].nat;
+                        cpu->regs.gpr[r1] = cpu->regs.gpr[r3].nat;
                     }
                     return;
                 } else {
@@ -54,10 +54,10 @@ void MMALUHandle(Ia64Bundle *bundle, Ia64Cpu *cpu, uint64_t slot) {
                 uint16_t imm = Imm14(sign, imm6d, imm7b);
                 uint64_t imma = SignExt(imm, 14);
                 printf("(qp %d) adds r%d = %ld, r%d\n", qp, r1, imma, r3);
-                if (cpu->regs.GetPR(qp)) {
+                if (cpu->regs.pr[qp].val) {
                     cpu->regs.CheckTargetRegister(r1);
                     cpu->regs.gpr[r1] = imma + cpu->regs.gpr[r3].val;
-                    cpu->regs.gpr[r1].nat = cpu->regs.gpr[r3].nat;
+                    cpu->regs.gpr[r1] = cpu->regs.gpr[r3].nat;
                 }
                 return;
             } else {

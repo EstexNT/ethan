@@ -42,7 +42,7 @@ void Handle(Ia64Bundle *bundle, Ia64Cpu *cpu, uint64_t slot) {
                                     uint8_t i = (slot >> 36) & 1;
                                     uint32_t imm21 = (i << 20) | (imm20a);
                                     printf("(qp %d) nop.m %08x\n", qp, imm21);
-                                    if (cpu->regs.GetPR(qp)) {
+                                    if (cpu->regs.pr[qp].val) {
                                         // no operation
                                     }
                                     return;
@@ -110,7 +110,7 @@ void Handle(Ia64Bundle *bundle, Ia64Cpu *cpu, uint64_t slot) {
                     cfm->sol = sol;
                     cfm->sor = sor;
                     cpu->regs.gpr[r1] = cpu->regs.ar[Ia64Regs::Ar::Type::PFS].val;
-                    cpu->regs.gpr[r1].nat = false;
+                    cpu->regs.gpr[r1] = false;
                     return;
                 }
                 default: {
@@ -138,7 +138,7 @@ void Handle(Ia64Bundle *bundle, Ia64Cpu *cpu, uint64_t slot) {
                                 uint8_t hint = (slot >> 28) & 3;
 
                                 printf("(qp %d) ld8%s r%d = [r%d]\n", qp, Hint::GetHintStr(hint), r1, r3);
-                                if (cpu->regs.GetPR(qp)) {
+                                if (cpu->regs.pr[qp].val) {
                                     // page 146 
                                     uint8_t size = 8;
                                     uint8_t itype = 0;//READ
@@ -155,7 +155,7 @@ void Handle(Ia64Bundle *bundle, Ia64Cpu *cpu, uint64_t slot) {
                                     Memory::ReadAt<uint64_t>(&val, paddr);
                                     //printf("read %lx at %lx\n", val, paddr);
                                     cpu->regs.gpr[r1] = ZeroExt(val, size * 8);
-                                    cpu->regs.gpr[r1].nat = false;
+                                    cpu->regs.gpr[r1] = false;
                                 }
                                 return;
                             }
@@ -176,7 +176,7 @@ void Handle(Ia64Bundle *bundle, Ia64Cpu *cpu, uint64_t slot) {
                                 uint8_t hint = (slot >> 28) & 0b11;
 
                                 printf("(qp %d) st8%s [r%d] = r%d\n", qp, Hint::GetHintStr(hint), r3, r2);
-                                if (cpu->regs.GetPR(qp)) {
+                                if (cpu->regs.pr[qp].val) {
                                     // page 233
                                     uint8_t size = 8;
                                     uint8_t otype = 0; //UNORDERED

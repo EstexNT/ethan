@@ -28,10 +28,10 @@ void Handle(Ia64Bundle *bundle, Ia64Cpu *cpu, uint64_t slot) {
                                     uint8_t b2 = (slot >> 13) & 7;
 
                                     printf("(qp %d) mov r%d = b%d\n", qp, r1, b2);
-                                    if (cpu->regs.GetPR(qp)) {
+                                    if (cpu->regs.pr[qp].val) {
                                         cpu->regs.CheckTargetRegister(r1);
                                         cpu->regs.gpr[r1] = cpu->regs.br[b2].val;
-                                        cpu->regs.gpr[r1].nat = false;
+                                        cpu->regs.gpr[r1] = false;
                                     }
                                     return;
                                 }
@@ -82,7 +82,7 @@ void Handle(Ia64Bundle *bundle, Ia64Cpu *cpu, uint64_t slot) {
                         uint64_t imm = s;
 
                         printf("(qp %d) dep r%d = %d, r%d, %d, %d\n", qp, r1, SignExt(imm, 1), r3, cpos6b, len6d);
-                        if (cpu->regs.GetPR(qp)) {
+                        if (cpu->regs.pr[qp].val) {
                             cpu->regs.CheckTargetRegister(r1);
                             // imm_form
                             uint64_t tmp_src = SignExt(imm, 1);
