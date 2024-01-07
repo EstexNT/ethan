@@ -1,13 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "pe.hpp"
-#include "cpu.hpp"
 
 
 namespace PE {
 
 FILE *gPEFile = nullptr;
-static Ia64Cpu *gCPU = nullptr;
 
 static IMAGE_DOS_HEADER dosHeader = {0};
 static IMAGE_NT_HEADERS64 ntHeaders64 = {0};
@@ -95,10 +93,6 @@ uint64_t GetSize(void) {
 #else
     return GetNt()->OptionalHeader.SizeOfImage;
 #endif
-}
-
-void AttachCpu(Ia64Cpu *cpu) {
-    gCPU = cpu;
 }
 
 

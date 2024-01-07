@@ -1,6 +1,16 @@
 #include "munit.hpp"
 
 namespace MUnit {
+#define DEFINEM3VARS \
+    uint8_t qp = (slot >> 0) & 63; \
+    uint8_t r1 = (slot >> 6) & 127; \
+    uint8_t imm7b = (slot >> 13) & 127; \
+    uint8_t r3 = (slot >> 20) & 127; \
+    uint8_t i = (slot >> 27) & 1; \
+    uint8_t hint = (slot >> 28) & 3; \
+    uint8_t s = (slot >> 36) & 1; \
+    uint16_t imm9 = (s << 8) | (i << 7) | imm7b; 
+
 
 static inline void CheckTargetRegisterSof(uint64_t r1, uint64_t newsof) {
     debugprintf("TODO: check_target_register_sof(%lx, %lx)\n", r1, newsof);
@@ -207,6 +217,43 @@ void Handle(Ia64Bundle *bundle, Ia64Cpu *cpu, uint64_t slot) {
                 }
             } else {
                 fprintf(stderr, "unimpl m unit intld +reg m %x x %x\n", m, x);
+                cpu->halt = true;
+                return;
+            }
+            return;
+        }
+        case InstructionType::IntLd_StImm_5: {
+            uint8_t b3532 = (slot >> 32) & 0xf;
+            uint8_t x6 = (slot >> 30) & 3;
+            if ((b3532 == 0) && (x6 == 3)) {
+                DEFINEM3VARS;
+                uint8_t size = 8;
+                printf("(qp %d) ld8%s r%d = [r%d], %ld\n", qp, Hint::GetHintStr(hint), r1, r3, imm9);
+                if (cpu->regs.pr[qp].val) {
+                    if (r1 == r3) {
+                        cpu->IllegalOperationFault();
+                    }
+                    cpu->regs.CheckTargetRegister(r1);
+                    cpu->regs.CheckTargetRegister(r3);
+                    if (cpu->regs.gpr[r3].nat) {
+                        cpu->RegisterNatConsumptionFault(0); // READ
+                    }
+                    //paddr = tlb_translate(GR[r3], size, itype, PSR.cpl, &mattr, &defer);
+                    uint64_t paddr = cpu->regs.gpr[r3].val;
+                    uint64_t val = 0;
+
+                    Memory::ReadAt<uint64_t>(&val, paddr);
+                    //printf("read %lx at %lx\n", val, paddr);
+                    cpu->regs.gpr[r1] = ZeroExt(val, size * 8);
+                    cpu->regs.gpr[r1] = false;
+                    cpu->regs.gpr[r3] = cpu->regs.gpr[r3].val + SignExt(imm9, 9);
+                    cpu->regs.gpr[r3].nat = cpu->regs.gpr[r3].nat; // yes this is in the manual
+                    if (cpu->regs.gpr[r3].nat) {
+                        // mem_implicit_prefetch(cpu->regs.gpr[r3], ldhint | bias, itype);
+                    }
+                }
+            } else {
+                fprintf(stderr, "unimpl m unit inst type 5 b3532 %x x6 %x\n", b3532, x6);
                 cpu->halt = true;
                 return;
             }

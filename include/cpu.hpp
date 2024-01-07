@@ -282,6 +282,7 @@ public:
         //printf("%lx\n", entry-PE::GetNt()->OptionalHeader.SizeOfHeaders-PE::GetNt()->OptionalHeader.SectionAlignment);
         PE::ReadAt<uint64_t>(&regs.ip, entry - PE::GetNt()->OptionalHeader.SizeOfHeaders - PE::GetNt()->OptionalHeader.SectionAlignment); // load func ptr
         PE::ReadAt<uint64_t>(&regs.gpr[1].val, entry - PE::GetNt()->OptionalHeader.SizeOfHeaders - PE::GetNt()->OptionalHeader.SectionAlignment + 8); // load gp
+        printf("entry=%08lx; gp=%08lx\n", regs.ip, regs.gpr[1].val);
         halt = false;
         branched = false;
     } 

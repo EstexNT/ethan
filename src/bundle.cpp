@@ -32,6 +32,13 @@ void Ia64Bundle::Handle(Ia64Cpu *cpu) {
             IUnit::Handle(this, cpu, _instslot2);
             return;
         }
+        case Ia64BundleTemplate::MMI_A: {
+            debugprintf("bundle MMI %x\n", _template);
+            MUnit::Handle(this, cpu, _instslot0);
+            MUnit::Handle(this, cpu, _instslot1);
+            IUnit::Handle(this, cpu, _instslot2);
+            return;
+        }
         case Ia64BundleTemplate::MIB_11: {
             debugprintf("bundle MIB %x\n", _template);
             MUnit::Handle(this, cpu, _instslot0);
