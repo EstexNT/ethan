@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "pe.hpp"
+#include "memory.hpp"
 
 
 namespace PE {
@@ -94,6 +95,124 @@ uint64_t GetSize(void) {
     return GetNt()->OptionalHeader.SizeOfImage;
 #endif
 }
+}
+
+// resolvers go here
+
+extern ResolvedImport ResolveMSVCR80(char *name);
+
+
+
+namespace PE {
+
+static struct {
+    char *name;
+    ResolvedImport (*fn)(char *name);
+} supportedDlls[] = {
+    { "MSVCR80.dll", ResolveMSVCR80 },
+};
+
+static void ResolveByName(char *entryName, char *importName, Ia64Addr outAddr) {
+    for (int i = 0; i < NELEM(supportedDlls); i++) {
+        if (strcmp(supportedDlls[i].name, entryName) == 0) {
+            Ia64Addr fnAddr = supportedDlls[i].fn(importName).addr;
+            Memory::WriteAt<Ia64Addr>(&fnAddr, outAddr);
+        }
+    }
+}
+
+void ParseImports(void) {
+    uint32_t importDescAddr = PE::GetNt()->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress;
+    IMAGE_IMPORT_DESCRIPTOR importDescriptor;
+    int j = 0;
+
+    while (true) {
+        Memory::ReadAt<IMAGE_IMPORT_DESCRIPTOR>(&importDescriptor, importDescAddr + GetNt()->OptionalHeader.ImageBase + sizeof(IMAGE_IMPORT_DESCRIPTOR) * j);
+        if (importDescriptor.Name == 0) {
+            break;
+        }
+    
+        char *entryName = Memory::ReadString(importDescriptor.Name + GetNt()->OptionalHeader.ImageBase);
+
+        printf("%s:\n", entryName);
+
+        IMAGE_THUNK_DATA64 lookupTable;
+        int i = 0;
+        while (true) {
+            Memory::ReadAt<IMAGE_THUNK_DATA64>(&lookupTable, importDescriptor.OriginalFirstThunk + GetNt()->OptionalHeader.ImageBase + i * sizeof(IMAGE_THUNK_DATA64));
+            if (lookupTable.u1.AddressOfData == 0) {
+                break;
+            }
+            if (IMAGE_SNAP_BY_ORDINAL64(lookupTable.u1.Ordinal)) {
+                fprintf(stderr, "unsupported import type (ordinal); dying\n");
+                exit(1);
+            } else {
+                IMAGE_IMPORT_BY_NAME byName;
+                Memory::ReadAt<IMAGE_IMPORT_BY_NAME>(&byName, lookupTable.u1.AddressOfData + GetNt()->OptionalHeader.ImageBase);
+                char *importName = Memory::ReadString(
+                    (Ia64Addr)((IMAGE_IMPORT_BY_NAME *)(lookupTable.u1.AddressOfData + GetNt()->OptionalHeader.ImageBase))->Name);
+                printf("\t%s = 0x%04x\n", importName, byName.Hint);
+                ResolveByName(entryName, importName, 
+                            Ia64Addr(importDescriptor.FirstThunk + GetNt()->OptionalHeader.ImageBase + i * sizeof(Ia64Addr)));
+                free(importName);
+            }
+
+
+            i++;
+        }
+
+        printf("\n");
+        j++;
+        free(entryName);
+    }
+
+}
 
 
 } // PE
+
+static struct ImportedStruct {
+    char *dllName;
+    char **funcNames;
+    void **funcPtrs;
+    Ia64Addr *funcAddrs;
+} *imported = nullptr;
+static ImportedStruct *FindImported(char *dllName) {
+    for (int i = 0; (imported + i) != nullptr; i++) {
+        if (strcmp(imported[i].dllName, dllName) == 0) {
+            return &imported[i];
+        }
+    }
+    return nullptr;
+}
+
+Ia64Addr MakeUpImportAddr(char *dllName, char *funcName) {
+    static Ia64Addr importAddr = 0x70000000;
+    static int count = 0;
+    ImportedStruct *imp = nullptr;
+
+    if (imported == nullptr) {
+        imported = (ImportedStruct *)malloc(sizeof(ImportedStruct));
+        imported[0].funcNames = (char **)malloc(sizeof(char *));
+        imported[0].funcPtrs = (void **)malloc(sizeof(void *));
+        imported[0].funcAddrs = (Ia64Addr *)malloc(sizeof(Ia64Addr));
+        imp = &imported[0];
+    } else {
+        imp = FindImported(dllName);
+        if (imp == nullptr) {
+            count++;
+            imported = (ImportedStruct *)realloc(imported, sizeof(ImportedStruct) * (1 + count));
+            imported[count].dllName = strdup(dllName);
+            imported[count].funcNames = (char **)malloc(sizeof(char *));
+            imported[count].funcPtrs = (void **)malloc(sizeof(void *));
+            imported[count].funcAddrs = (Ia64Addr *)malloc(sizeof(Ia64Addr));
+        }
+    }
+    Ia64Addr out = importAddr;
+    importAddr += 0x10;
+    return out;
+}
+
+void CallImportedFunc(Ia64Addr addr) {
+    return;
+}

@@ -272,6 +272,44 @@ static_assert(sizeof(IMAGE_SECTION_HEADER) == IMAGE_SIZEOF_SECTION_HEADER, "size
 #define IMAGE_SCN_MEM_WRITE                  0x80000000  // Section is writeable.
 
 
+typedef struct _IMAGE_IMPORT_BY_NAME {
+    uint16_t    Hint;
+    char    Name[1];
+} IMAGE_IMPORT_BY_NAME, *PIMAGE_IMPORT_BY_NAME;
+
+typedef struct _IMAGE_THUNK_DATA64 {
+    union {
+        uint64_t ForwarderString;  // PBYTE 
+        uint64_t Function;         // PDWORD
+        uint64_t Ordinal;
+        uint64_t AddressOfData;    // PIMAGE_IMPORT_BY_NAME
+    } u1;
+} IMAGE_THUNK_DATA64;
+typedef IMAGE_THUNK_DATA64 *PIMAGE_THUNK_DATA64;
+
+typedef struct _IMAGE_IMPORT_DESCRIPTOR {
+    union {
+        uint32_t   Characteristics;         // 0 for terminating null import descriptor
+        uint32_t   OriginalFirstThunk;      // RVA to original unbound IAT (PIMAGE_THUNK_DATA)
+    };
+    uint32_t   TimeDateStamp;               // 0 if not bound,
+                                            // -1 if bound, and real date\time stamp
+                                            //     in IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT (new BIND)
+                                            // O.W. date/time stamp of DLL bound to (Old BIND)
+
+    uint32_t   ForwarderChain;              // -1 if no forwarders
+    uint32_t   Name;
+    uint32_t   FirstThunk;                  // RVA to IAT (if bound this IAT has actual addresses)
+} IMAGE_IMPORT_DESCRIPTOR;
+typedef IMAGE_IMPORT_DESCRIPTOR *PIMAGE_IMPORT_DESCRIPTOR;
+
+#define IMAGE_ORDINAL_FLAG64 0x8000000000000000
+#define IMAGE_ORDINAL_FLAG32 0x80000000
+#define IMAGE_ORDINAL64(Ordinal) (Ordinal & 0xffff)
+#define IMAGE_ORDINAL32(Ordinal) (Ordinal & 0xffff)
+#define IMAGE_SNAP_BY_ORDINAL64(Ordinal) ((Ordinal & IMAGE_ORDINAL_FLAG64) != 0)
+#define IMAGE_SNAP_BY_ORDINAL32(Ordinal) ((Ordinal & IMAGE_ORDINAL_FLAG32) != 0)
+
 namespace PE {
 extern FILE *gPEFile; // eh
 
@@ -293,8 +331,15 @@ static inline void ReadAt(T *v, uint64_t off) {
     fread(v, sizeof(T), 1, gPEFile);
     fseek(gPEFile, tellval, SEEK_SET);
 }
+extern void ParseImports(void);
 
 } // PE
+
+struct ResolvedImport {
+    Ia64Addr addr;
+    void *funcPtr;
+};
+extern Ia64Addr MakeUpImportAddr(char *dllName, char *funcName);
 
 static inline uintptr_t GetPhysAddr(uint64_t vaddr) {
     //printf("virt %lx -> phys\n", vaddr);

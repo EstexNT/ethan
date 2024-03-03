@@ -36,9 +36,12 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+
     IMAGE_SECTION_HEADER *sections = PE::ParseSections();
     debugprintf("image base: %016" PRIx64 "; entry: %08x\n", ntHead->OptionalHeader.ImageBase, ntHead->OptionalHeader.AddressOfEntryPoint);
     Memory::LoadPE();
+    
+    PE::ParseImports();
     
     Ia64Cpu cpu {ntHead->OptionalHeader.ImageBase, ntHead->OptionalHeader.AddressOfEntryPoint};
     cpu.run();

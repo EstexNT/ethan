@@ -79,6 +79,18 @@ template<typename T>
 static inline void WriteAt(T *buf, Ia64Addr addr) {
     GetList(addr)->WriteAt<T>(buf, addr);
 }
+static inline char *ReadString(Ia64Addr addr) {
+    char *outstr = (char *)malloc(1);
+    char tempchr = '\0';
+    int i = 0;
+    do {
+        ReadAt<char>(&tempchr, addr + i);
+        outstr[i] = tempchr;
+        i++;
+        outstr = (char *)realloc(outstr, 1 + i);
+    } while (tempchr != '\0');
+    return outstr;
+}
 
 static inline void LoadPE(void) {
     static unsigned char tempbuf[MEMLIST_MEMSIZE];
@@ -89,7 +101,6 @@ static inline void LoadPE(void) {
         PE::ReadAt<unsigned char[MEMLIST_MEMSIZE]>(&tempbuf, GetPhysAddr(addr));
         GetList(addr)->WriteAt<unsigned char[MEMLIST_MEMSIZE]>(&tempbuf, addr);
     }
-    //*(int *)0 = 0xdead;
 }
 
 } //namespace Memory
