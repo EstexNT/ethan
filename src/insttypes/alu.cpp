@@ -24,6 +24,9 @@ void MMALUHandle(Ia64Bundle *bundle, Ia64Cpu *cpu, uint64_t slot) {
                 if ((x4 == 0xb) && (x2b == 3)) {
                     DEFINEA3VARS;
                     printf("(qp %d) xor r%d = %d(%d), r%d\n", qp, r1, imm, imm8, r3);
+                    if (cpu->branched) {
+                        return;
+                    }
                     if (cpu->regs.pr[qp].val) {
                         cpu->regs.CheckTargetRegister(r1);
                         uint64_t tmp_src = imm;

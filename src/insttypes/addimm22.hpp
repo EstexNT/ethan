@@ -18,6 +18,10 @@ static inline void Handle(Ia64Bundle *bundle, Ia64Cpu *cpu, uint64_t slot) {
 
     printf("(qp %d) addl r%d = 0x%08x(%ld), r%d\n", qp, r1, imm22, imm, r3);
 
+    if (cpu->branched) {
+        return;
+    }
+
     if (cpu->regs.pr[qp].val) {
         cpu->regs.CheckTargetRegister(r1);
         cpu->regs.gpr[r1] = imm + cpu->regs.gpr[r3].val;

@@ -5,3 +5,4 @@
 ia64emu
 *.bin
 cpu.log
+bios/

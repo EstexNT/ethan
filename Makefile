@@ -26,4 +26,4 @@ clean:
 	rm -rf $(BUILD_DIR) ia64emu
 
 test: ia64emu
-	./ia64emu test.exe 
+	./ia64emu bios/bios130.BIN

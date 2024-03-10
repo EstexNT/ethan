@@ -1,10 +1,14 @@
 #pragma once
 
 #include "common.h"
-#include "pe.hpp"
 
 
 namespace Memory {
+
+enum MemoryAddresses {
+    BIOS_ROM = 0xffc00000,
+};
+
 
 #define MEMLIST_MEMSIZE 0x200
 
@@ -92,15 +96,24 @@ static inline char *ReadString(Ia64Addr addr) {
     return outstr;
 }
 
-static inline void LoadPE(void) {
-    static unsigned char tempbuf[MEMLIST_MEMSIZE];
-    uint64_t imagebase = PE::GetNt()->OptionalHeader.ImageBase;
-    uint64_t imageend = imagebase + PE::GetSize();
-
-    for (Ia64Addr addr = imagebase; addr < imageend; addr += MEMLIST_MEMSIZE) {
-        PE::ReadAt<unsigned char[MEMLIST_MEMSIZE]>(&tempbuf, GetPhysAddr(addr));
-        GetList(addr)->WriteAt<unsigned char[MEMLIST_MEMSIZE]>(&tempbuf, addr);
+static inline bool LoadBIOS(char *biosFileName) {
+    FILE *biosf = fopen(biosFileName, "rb");
+    if (biosf == nullptr) {
+        perror("Couldn't open the BIOS file");
+        return false;
     }
+
+    int i = 0;
+    static uint8_t tempbuf[MEMLIST_MEMSIZE] = {0};
+    printf("Reading the BIOS...");
+    while (i != ((0x100000000 - BIOS_ROM))) {
+        fread(tempbuf, MEMLIST_MEMSIZE, 1, biosf);
+        WriteAt<uint8_t[MEMLIST_MEMSIZE]>(&tempbuf, BIOS_ROM + i);
+        i += MEMLIST_MEMSIZE;
+    }
+    printf(" Done.\n");
+    fclose(biosf);
+    return true;
 }
 
 } //namespace Memory

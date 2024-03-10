@@ -102,7 +102,9 @@ void Handle(Ia64Bundle *bundle, Ia64Cpu *cpu, uint64_t slot) {
                     uint8_t sol = (slot >> 20) & 127;
                     uint8_t sor = (slot >> 27) & 15;
                     printf("(qp %d) alloc r%d = ar.pfs, %d, %d, %d\n", qp, r1, sof, sol, sor);
-                    
+                    if (cpu->branched) {
+                        return;
+                    }
                     CheckTargetRegisterSof(r1, sof);
 
                     if ((sof > 96) || ((sor << 3) > sof) || (sol > sof) || (qp != 0)) {
@@ -148,6 +150,9 @@ void Handle(Ia64Bundle *bundle, Ia64Cpu *cpu, uint64_t slot) {
                                 uint8_t hint = (slot >> 28) & 3;
 
                                 printf("(qp %d) ld8%s r%d = [r%d]\n", qp, Hint::GetHintStr(hint), r1, r3);
+                                if (cpu->branched) {
+                                    return;
+                                }
                                 if (cpu->regs.pr[qp].val) {
                                     // page 146 
                                     uint8_t size = 8;
@@ -186,6 +191,9 @@ void Handle(Ia64Bundle *bundle, Ia64Cpu *cpu, uint64_t slot) {
                                 uint8_t hint = (slot >> 28) & 0b11;
 
                                 printf("(qp %d) st8%s [r%d] = r%d\n", qp, Hint::GetHintStr(hint), r3, r2);
+                                if (cpu->branched) {
+                                    return;
+                                }
                                 if (cpu->regs.pr[qp].val) {
                                     // page 233
                                     uint8_t size = 8;
@@ -229,6 +237,9 @@ void Handle(Ia64Bundle *bundle, Ia64Cpu *cpu, uint64_t slot) {
                 DEFINEM3VARS;
                 uint8_t size = 8;
                 printf("(qp %d) ld8%s r%d = [r%d], %ld\n", qp, Hint::GetHintStr(hint), r1, r3, imm9);
+                if (cpu->branched) {
+                    return;
+                }
                 if (cpu->regs.pr[qp].val) {
                     if (r1 == r3) {
                         cpu->IllegalOperationFault();

@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+#include <inttypes.h>
 
 #define NELEM(a) ((size_t) (sizeof((a)) / (sizeof((a)[0]))))
 

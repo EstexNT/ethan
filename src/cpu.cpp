@@ -1,7 +1,5 @@
 #include "cpu.hpp"
 
-static uint8_t stackBuffer[64*1024] = {0};
-
 static char logBuf[0x10000] = {0};
 
 void Ia64Cpu::Dump(void) {
@@ -63,6 +61,13 @@ void Ia64Cpu::Dump(void) {
 
     sprintf(lb,   "\t\tPSR:\n\t\t 0x%016" PRIx64 "\n", regs.psr.raw);
 
+    sprintf(lb,   "\t\tCPUID:\n\t\t  ");
+    for (int i = 0; i < (regs.cpuid[3].val & 0xff); i++) {
+        sprintf(lb, 
+                "CPUID%d = 0x%016" PRIx64 ", ", i, regs.cpuid[i].val);
+    }
+    sprintf(lb, "\n");
+
     sprintf(lb, "\n=== CPU DUMP END ===\n");
 
     fwrite(logBuf, strlen(logBuf), 1, outlog);
@@ -70,13 +75,8 @@ void Ia64Cpu::Dump(void) {
     fclose(outlog);
 #undef lb
 }
-#define STACK_VALUE 0xfffe0000 
-#define STACK_SIZE (64 * 1024)
-void Ia64Cpu::run(void) {
 
-    // TODO:
-    // write a bootloader so that the stack is set up properly (instead of in emu)
-    regs.gpr[12] = uint64_t(STACK_VALUE + STACK_SIZE - 128);
+void Ia64Cpu::run(void) {
     Ia64Bundle bundle {0};
 
     while (true) {
@@ -92,15 +92,8 @@ void Ia64Cpu::run(void) {
             }
             return;
         }
-        
-        if (regs.gpr[12].val <= STACK_VALUE) {
-            fprintf(stderr," !!!! STACK BUFFER OVERRUN !!!!");
-            return;
-        }
-
-        uint64_t theip = GetPhysAddr(regs.ip);
+        Memory::ReadAt<Ia64Bundle>(&bundle, regs.ip);
         printf("%lx:\t", regs.ip);
-        PE::ReadAt<uint128_t>(&bundle.raw, theip);
         debugprintf("bundle: %016" PRIx64 " %016" PRIx64 "\n", uint64_t((bundle.raw >> 64) & UINT64_MAX), uint64_t(bundle.raw & UINT64_MAX));
         bundle.Handle(this);
         if (!branched) {

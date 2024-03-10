@@ -6,7 +6,7 @@ static inline char *GetBranchWhetherHintCompleterStr(uint8_t v) {
     if (v > 3) {
         return "";
     }
-    return (char *[]){".sptk", "spnt", ".dptk", ".dpnt"}[v];
+    return (char *[]){".sptk", ".spnt", ".dptk", ".dpnt"}[v];
 }
 static inline char *GetSequentialPrefetchHintCompleterStr(uint8_t v) {
     if (v > 1) {
@@ -62,6 +62,9 @@ void Handle(Ia64Bundle *bundle, Ia64Cpu *cpu, uint64_t slot) {
                     GetBranchCacheDeallocHintCompleterStr(d),
                     tmp_IP
                     );
+                    if (cpu->branched) {
+                        return;
+                    }
                     bool tmp_taken = cpu->regs.pr[qp].val;
                     if (tmp_taken) {
                         cpu->branched = true;
@@ -108,7 +111,9 @@ void Handle(Ia64Bundle *bundle, Ia64Cpu *cpu, uint64_t slot) {
                     GetSequentialPrefetchHintCompleterStr(p),
                     GetBranchCacheDeallocHintCompleterStr(d),
                     b1, tmp_IP);
-            
+            if (cpu->branched) {
+                return;
+            }
             bool tmp_taken = cpu->regs.pr[qp].val;
             if (tmp_taken) {
                 cpu->regs.br[b1] = cpu->regs.ip + 0x10;

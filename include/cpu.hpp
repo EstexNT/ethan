@@ -1,8 +1,8 @@
 #pragma once
+#include "common.h"
 #include "memory.hpp"
 #include "fp.hpp"
 #include "bundle.hpp"
-#include "pe.hpp"
 
 class Ia64Regs {
 public:
@@ -223,6 +223,23 @@ EC = 66         # Epilog Count Register
         };
     } psr; // processor status register
     #pragma pack(pop)
+    struct Cpuid {
+        uint64_t val;
+    } cpuid[5]; // processor identification registers
+
+    static uint64_t MakeVendorInfo(const char *s) {
+        return uint64_t(
+            ((s[0] & 0xff) << 0x00) | ((s[1] & 0xff) << 0x08) | ((s[2] & 0xff) << 0x10) | ((s[3] & 0xff) << 0x18) |
+            (uint64_t(s[4] & 0xff) << 0x20) | (uint64_t(s[5] & 0xff) << 0x28) | 
+            (uint64_t(s[6] & 0xff) << 0x30) | (uint64_t(s[7] & 0xff) << 0x38)
+            );
+    }
+    static uint64_t MakeVersionInfo(int num, int rev, int mod, int fam, int archrev) {
+        return uint64_t(
+            ((num & 0xff) << 0x00) | ((rev & 0xff) << 0x08) | ((mod & 0xff) << 0x10) | ((fam & 0xff) << 0x18) | 
+            (uint64_t(archrev & 0xff) << 0x20)
+        );
+    }
 
     Ia64Regs() {
         gpr[GPR_ZEROREG].val = uint64_t(0);
@@ -230,7 +247,6 @@ EC = 66         # Epilog Count Register
         fpr[FPR_ZEROREG].val = 0;
         fpr[FPR_ONEREG].val = 1;
         pr[PR_ONEREG].val = 1;
-        ip = 0; // TODO: proper bootloader
         for (int i = 1; i < NELEM(gpr); i++) {
             gpr[i].val = uint64_t(0);
             gpr[i].nat = false;
@@ -246,6 +262,13 @@ EC = 66         # Epilog Count Register
         }
         for (int i = 0; i < NELEM(ar); i++) {
             ar[i] = 0;
+        }
+        cpuid[0].val = MakeVendorInfo("Ethanium");
+        cpuid[3].val = MakeVersionInfo(4, 0, 0, 0, 0);
+        cpuid[1].val = 0;
+        cpuid[2].val = 0;
+        for (int i = 4; i < (cpuid[3].val & 0xff); i++) {
+            cpuid[i].val = 0;
         }
     }
 
@@ -274,15 +297,14 @@ public:
     }
 };
 
+enum BiosOffsets {
+    PALE_RESET = Memory::BIOS_ROM + 0x3fffb0,
+};
+
 class Ia64Cpu {
 public:
-    Ia64Cpu(uint64_t ib, uint64_t entry) {
-        imageBase = ib;
-        //regs.ip = entry + ib;
-        //printf("%lx\n", entry-PE::GetNt()->OptionalHeader.SizeOfHeaders-PE::GetNt()->OptionalHeader.SectionAlignment);
-        PE::ReadAt<uint64_t>(&regs.ip, entry - PE::GetNt()->OptionalHeader.SizeOfHeaders - PE::GetNt()->OptionalHeader.SectionAlignment); // load func ptr
-        PE::ReadAt<uint64_t>(&regs.gpr[1].val, entry - PE::GetNt()->OptionalHeader.SizeOfHeaders - PE::GetNt()->OptionalHeader.SectionAlignment + 8); // load gp
-        printf("entry=%08lx; gp=%08lx\n", regs.ip, regs.gpr[1].val);
+    Ia64Cpu() {
+        regs.ip = PALE_RESET;
         halt = false;
         branched = false;
     } 
@@ -295,7 +317,6 @@ public:
     Ia64Regs regs;
     Ia64Alat alat;
     Ia64Rse rse;
-    uint64_t imageBase;
     bool halt;
     bool branched;
 

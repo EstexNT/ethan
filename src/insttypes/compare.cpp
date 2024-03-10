@@ -26,6 +26,9 @@ DECLINST(CmpEqUnc) {
     DEFINEA6VARS;
     //printf("(qp %d) adds r%d = %ld, r%d\n", qp, r1, imma, r3);
     printf("(qp %d) cmp.eq.unc p%d, p%d = r%d, r%d\n", qp, p1, p2, r2, r3);
+    if (cpu->branched) {
+        return;
+    }
     if (cpu->regs.pr[qp].val) {
         if (p1 == p2) {
             cpu->IllegalOperationFault();
