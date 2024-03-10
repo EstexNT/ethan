@@ -1,83 +1,79 @@
+#include <fstream>
+#include <iomanip>
 #include "cpu.hpp"
 
-static char logBuf[0x10000] = {0};
 
 void Ia64Cpu::Dump(void) {
-#define lb (logBuf+strlen(logBuf))
-    FILE *outlog = fopen("cpu.log", "w+");
+#define TOHEX16 std::hex << std::setw(16) << std::setfill('0')
+#define TOHEX2 std::hex << std::setw(2) << std::setfill('0')
+#define TODEC std::dec << std::setw(0) << std::setfill(' ')
 
-    sprintf(logBuf, 
-    "\n=== CPU DUMP START ===\n"
-    "\tRegisters:\n"
-    "\t\tGPR:\n\t\t  ");
+    std::ofstream outlog("cpu.log", std::ios::out);
+    outlog << "\n=== CPU DUMP START ===\n";
+    outlog << "\tRegisters:\n";
+    
+    outlog << "\t\tGPR:\n\t\t  ";
     for (int i = 0; i < NELEM(regs.gpr); i++) {
-        sprintf(lb, 
-            "GPR%d = 0x%016" PRIx64 ", ", i, regs.gpr[i].val
-        );
+        outlog << "GPR" << TODEC << i;
+        outlog << " = 0x" << TOHEX16 << regs.gpr[i].val << ", ";
         if ((i % 7) == 0) {
-            sprintf(lb, "\n\t\t  ");
+            outlog << "\n\t\t  ";
         }
     }
 
-    sprintf(lb, "\n\t\tFPR:\n\t\t  ");
-
+    outlog << "\n\t\tFPR:\n\t\t  ";
     for (int i = 0; i < NELEM(regs.fpr); i++) {
-        sprintf(lb,  // TODO: fix this
-            "FPR%d = 0x%016" PRIx64 " %016" PRIx64 ", ", i, 
-                    uint64_t(regs.fpr[i].val >> 64), 
-                        uint64_t(regs.fpr[i].val));
+        outlog << "FPR" << TODEC << i;
+        outlog << " = 0x" << TOHEX16 << regs.fpr[i].val.val[1] << TOHEX16 << regs.fpr[i].val.val[0] << ", ";
         if (i == 1) {
-            sprintf(lb, "\n\t\t  ");
+            outlog << "\n\t\t  ";
         }
         if ((i % 7) == 0) {
-            sprintf(lb, "\n\t\t  ");
+            outlog << "\n\t\t  ";
         }
-    }
-    sprintf(lb, "\n\t\tPR:\n\t\t  ");
+    }    
+
+    outlog << "\n\t\tPR:\n\t\t  ";
     for (int i = 0; i < NELEM(regs.pr); i++) {
-        sprintf(lb, 
-            "PR%d = 0x%02x, ", i, regs.pr[i].val);
+        outlog << "PR" << TODEC << i;
+        outlog << " = 0x" << TOHEX2 << regs.pr[i].val << ", ";
         if ((i % 16) == 0) {
-            sprintf(lb, "\n\t\t  ");
+            outlog << "\n\t\t  ";
         }
     }
-    sprintf(lb, "\n\t\tBR:\n\t\t  ");
+
+    outlog << "\n\t\tBR:\n\t\t  ";
     for (int i = 0; i < NELEM(regs.br); i++) {
-        sprintf(lb,
-            "BR%d = 0x%016" PRIx64 ", ", i, regs.br[i].val);
+        outlog << "BR" << TODEC << i;
+        outlog << " = 0x" << TOHEX16 << regs.br[i].val << ", ";
     }
-    sprintf(lb, "\n\t\tAR:\n\t\t  ");
+
+    outlog << "\n\t\tAR:\n\t\t  ";
     for (int i = 0; i < NELEM(regs.ar); i++) {
-        sprintf(lb, 
-            "AR%d = 0x%016" PRIx64 ", ", i, regs.ar[i].val);
+        outlog << "AR" << TODEC << i;
+        outlog << " = 0x" << TOHEX16 << regs.ar[i].val << ", ";
         if ((i % 7) == 0) {
-            sprintf(lb, "\n\t\t  ");
+            outlog << "\n\t\t  ";
         }
     }
 
-    sprintf(lb, "\n\t\tIP:\n\t\t 0x%016" PRIx64 "\n", regs.ip);
+    outlog << "\n\t\tIP:\n\t\t 0x" << TOHEX16 << regs.ip << "\n";
+    outlog << "\t\tCFM:\n\t\t 0x" << TOHEX16 << regs.cfm.raw << "\n";
+    outlog << "\t\tPSR:\n\t\t 0x" << TOHEX16 << regs.psr.raw << "\n";
 
-    sprintf(lb,   "\t\tCFM:\n\t\t 0x%016" PRIx64 "\n", regs.cfm.raw);
-
-    sprintf(lb,   "\t\tPSR:\n\t\t 0x%016" PRIx64 "\n", regs.psr.raw);
-
-    sprintf(lb,   "\t\tCPUID:\n\t\t  ");
+    outlog << "\t\tCPUID:\n\t\t  ";
     for (int i = 0; i < (regs.cpuid[3].val & 0xff); i++) {
-        sprintf(lb, 
-                "CPUID%d = 0x%016" PRIx64 ", ", i, regs.cpuid[i].val);
+        outlog << "CPUID" << TODEC << i;
+        outlog << " = 0x" << TOHEX16 << regs.cpuid[i].val << ", ";
     }
-    sprintf(lb, "\n");
+    outlog << "\n";
+    outlog << "\n=== CPU DUMP END ===\n";
 
-    sprintf(lb, "\n=== CPU DUMP END ===\n");
-
-    fwrite(logBuf, strlen(logBuf), 1, outlog);
-
-    fclose(outlog);
-#undef lb
+    outlog.close();
 }
 
 void Ia64Cpu::run(void) {
-    Ia64Bundle bundle {0};
+    Ia64Bundle bundle {};
 
     while (true) {
         if (halt) {
@@ -94,12 +90,12 @@ void Ia64Cpu::run(void) {
         }
         Memory::ReadAt<Ia64Bundle>(&bundle, regs.ip);
         printf("%lx:\t", regs.ip);
-        debugprintf("bundle: %016" PRIx64 " %016" PRIx64 "\n", uint64_t((bundle.raw >> 64) & UINT64_MAX), uint64_t(bundle.raw & UINT64_MAX));
+        debugprintf("bundle: %016" PRIx64 " %016" PRIx64 "\n", bundle.raw[1], bundle.raw[0]);
         bundle.Handle(this);
         if (!branched) {
-            regs.ip += sizeof(uint128_t); 
+            regs.ip += IA64BUNDLESIZE; 
         } else {
-            branched = false; // branches don't increment ip (I think)
+            branched = false;
         }
     }
 }

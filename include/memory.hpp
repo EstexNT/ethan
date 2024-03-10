@@ -1,6 +1,8 @@
 #pragma once
 
-#include "common.h"
+#include <fstream>
+#include <string>
+#include "common.hpp"
 
 
 namespace Memory {
@@ -13,7 +15,7 @@ enum MemoryAddresses {
 #define MEMLIST_MEMSIZE 0x200
 
 struct MemoryList {
-    void *memptr;
+    uint8_t *memptr;
     Ia64Addr addr;
 
 
@@ -22,7 +24,7 @@ struct MemoryList {
         addr = 0;
     }
     MemoryList(Ia64Addr argaddr) {
-        memptr = malloc(MEMLIST_MEMSIZE);
+        memptr = new uint8_t[MEMLIST_MEMSIZE];
         addr = argaddr;
     }
 
@@ -40,7 +42,7 @@ struct MemoryList {
             fprintf(stderr, "trying to read at %lx which is out of range for %lx\n", argaddr, addr);
             return;
         }
-        memcpy(buf, (uint8_t *)memptr + Diff(argaddr), sizeof(T));
+        memcpy(buf, memptr + Diff(argaddr), sizeof(T));
     }
     template<typename T>
     void WriteAt(T *src, Ia64Addr argaddr) {
@@ -48,12 +50,12 @@ struct MemoryList {
             fprintf(stderr, "trying to write to %lx which is not in range of %lx\n", argaddr, addr);
             return;
         }
-        memcpy((uint8_t *)memptr + Diff(argaddr), src, sizeof(T));
+        memcpy(memptr + Diff(argaddr), src, sizeof(T));
     }
 };
 
 static inline MemoryList *MakeList(void) {
-    MemoryList *mlist = new MemoryList;
+    auto mlist = new MemoryList;
     if (mlist == nullptr) {
         fprintf(stderr, "Couldn't make a list!\n");
         exit(1);
@@ -63,7 +65,7 @@ static inline MemoryList *MakeList(void) {
 }
 
 static inline MemoryList *MakeList(Ia64Addr addr) {
-    MemoryList *mlist = new MemoryList(addr);
+    auto mlist = new MemoryList(addr);
     if (mlist == nullptr) {
         fprintf(stderr, "Couldn't make a list!\n");
         exit(1);
@@ -83,23 +85,11 @@ template<typename T>
 static inline void WriteAt(T *buf, Ia64Addr addr) {
     GetList(addr)->WriteAt<T>(buf, addr);
 }
-static inline char *ReadString(Ia64Addr addr) {
-    char *outstr = (char *)malloc(1);
-    char tempchr = '\0';
-    int i = 0;
-    do {
-        ReadAt<char>(&tempchr, addr + i);
-        outstr[i] = tempchr;
-        i++;
-        outstr = (char *)realloc(outstr, 1 + i);
-    } while (tempchr != '\0');
-    return outstr;
-}
 
 static inline bool LoadBIOS(char *biosFileName) {
-    FILE *biosf = fopen(biosFileName, "rb");
-    if (biosf == nullptr) {
-        perror("Couldn't open the BIOS file");
+    std::ifstream biosf(biosFileName, std::ios::in | std::ios::binary);
+    if (biosf.fail()) {
+        fprintf(stderr, "Couldn't open the BIOS file\n");
         return false;
     }
 
@@ -107,12 +97,12 @@ static inline bool LoadBIOS(char *biosFileName) {
     static uint8_t tempbuf[MEMLIST_MEMSIZE] = {0};
     printf("Reading the BIOS...");
     while (i != ((0x100000000 - BIOS_ROM))) {
-        fread(tempbuf, MEMLIST_MEMSIZE, 1, biosf);
+        biosf.read((char *)tempbuf, MEMLIST_MEMSIZE);
         WriteAt<uint8_t[MEMLIST_MEMSIZE]>(&tempbuf, BIOS_ROM + i);
         i += MEMLIST_MEMSIZE;
     }
     printf(" Done.\n");
-    fclose(biosf);
+    biosf.close();
     return true;
 }
 

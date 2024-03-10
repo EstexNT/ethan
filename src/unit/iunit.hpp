@@ -1,6 +1,5 @@
 #pragma once
 
-#include <stdio.h>
 #include "bundle.hpp"
 #include "cpu.hpp"
 #include "insttypes/alu.hpp"

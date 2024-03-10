@@ -23,7 +23,7 @@ void MMALUHandle(Ia64Bundle *bundle, Ia64Cpu *cpu, uint64_t slot) {
                 uint8_t x2b = (slot >> 27) & 3;
                 if ((x4 == 0xb) && (x2b == 3)) {
                     DEFINEA3VARS;
-                    printf("(qp %d) xor r%d = %d(%d), r%d\n", qp, r1, imm, imm8, r3);
+                    printf("(qp %d) xor r%d = %ld(%d), r%d\n", qp, r1, imm, imm8, r3);
                     if (cpu->branched) {
                         return;
                     }

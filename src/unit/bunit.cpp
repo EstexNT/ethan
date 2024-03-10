@@ -2,23 +2,23 @@
 
 namespace BUnit {
 
-static inline char *GetBranchWhetherHintCompleterStr(uint8_t v) {
+static inline const char *GetBranchWhetherHintCompleterStr(uint8_t v) {
     if (v > 3) {
         return "";
     }
-    return (char *[]){".sptk", ".spnt", ".dptk", ".dpnt"}[v];
+    return (const char *[]){".sptk", ".spnt", ".dptk", ".dpnt"}[v];
 }
-static inline char *GetSequentialPrefetchHintCompleterStr(uint8_t v) {
+static inline const char *GetSequentialPrefetchHintCompleterStr(uint8_t v) {
     if (v > 1) {
         return "";
     }
-    return (char *[]){".few", ".many"}[v];
+    return (const char *[]){".few", ".many"}[v];
 }
-static inline char *GetBranchCacheDeallocHintCompleterStr(uint8_t v) {
+static inline const char *GetBranchCacheDeallocHintCompleterStr(uint8_t v) {
     if (v > 1) {
         return "";
     }
-    return (char *[]){"", ".clr"}[v];
+    return (const char *[]){"", ".clr"}[v];
 }
 
 
@@ -116,7 +116,7 @@ void Handle(Ia64Bundle *bundle, Ia64Cpu *cpu, uint64_t slot) {
             }
             bool tmp_taken = cpu->regs.pr[qp].val;
             if (tmp_taken) {
-                cpu->regs.br[b1] = cpu->regs.ip + 0x10;
+                cpu->regs.br[b1] = cpu->regs.ip + IA64BUNDLESIZE;
                 
                 cpu->regs.ar[Ia64Regs::Ar::Type::PFS].SetPFS(cpu->regs.cfm.raw, 
                                                 cpu->regs.ar[Ia64Regs::Ar::Type::EC].val, cpu->regs.psr.cpl);

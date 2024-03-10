@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common.h"
+#include "common.hpp"
 
 namespace Hint {
 
@@ -13,12 +13,12 @@ namespace Hint {
 
 */
 
-static inline char *GetHintStr(uint8_t hint) {
+static inline const char *GetHintStr(uint8_t hint) {
     if (hint > 3) return "";
     static char *hintStrTable[] = {
 
     };
-    return (char *[]){"", ".nt1", ".bad", ".nta"}[hint];
+    return (const char *[]){"", ".nt1", ".bad", ".nta"}[hint];
 }
 
 } // Hint

@@ -218,7 +218,7 @@ void Handle(Ia64Bundle *bundle, Ia64Cpu *cpu, uint64_t slot) {
                         return;
                     }
                     default: {
-                        fprintf(stderr, "unimpl m unit intld +reg m0x0 %x\n", (slot >> 32) & 0xf);
+                        fprintf(stderr, "unimpl m unit intld +reg m0x0 %x\n", uint32_t((slot >> 32) & 0xf));
                         cpu->halt = true;
                         return;
                     }
@@ -236,7 +236,7 @@ void Handle(Ia64Bundle *bundle, Ia64Cpu *cpu, uint64_t slot) {
             if ((b3532 == 0) && (x6 == 3)) {
                 DEFINEM3VARS;
                 uint8_t size = 8;
-                printf("(qp %d) ld8%s r%d = [r%d], %ld\n", qp, Hint::GetHintStr(hint), r1, r3, imm9);
+                printf("(qp %d) ld8%s r%d = [r%d], %d\n", qp, Hint::GetHintStr(hint), r1, r3, imm9);
                 if (cpu->branched) {
                     return;
                 }

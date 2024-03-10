@@ -1,29 +1,23 @@
 #pragma once
-#include <stdint.h>
-#include "n128.h"
+#include "common.hpp"
 
 class Ia64Cpu;
 struct Ia64Bundle {
+    #define IA64BUNDLESIZE 0x10
     #pragma pack(push,1)
     union {
         struct {
-            uint128_t _template:5;
-            uint128_t _instslot0:41;
-            uint128_t _instslot1:41;
-            uint128_t _instslot2:41;
+            uint64_t _template:5;
+            uint64_t _instslot0:41;
+            uint64_t _instslot1:41;
+            uint64_t _instslot2:41;
         };
-        uint128_t raw;
+        uint64_t raw[2];
     };
     #pragma pack(pop)
     
-    Ia64Bundle(uint128_t d) {
-        raw = d;
-    }
-    Ia64Bundle(uint8_t tmplt, uint64_t is0, uint64_t is1, uint64_t is2) {
-        _template = tmplt;
-        _instslot0 = is0;
-        _instslot1 = is1;
-        _instslot2 = is2;
+    Ia64Bundle(void) {
+        raw[0] = raw[1] = 0;
     }
 
     void Handle(Ia64Cpu *cpu);

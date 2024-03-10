@@ -1,47 +1,39 @@
+#include <list>
 #include "memory.hpp"
 
 namespace Memory {
 
-static MemoryList **memlist = nullptr;
-static int listcount = 0;
+
+static std::list<MemoryList *> memlist {};
 
 bool Init(void) {
-    memlist = (MemoryList **)malloc(sizeof(MemoryList *) * (listcount + 1));
-
-    if (memlist == nullptr) {
-        perror("Couldn't create memory list");
-        exit(1);
-        return false;
-    }
-
-    memlist[listcount++] = MakeList();
-
+    // TODO: do things here
     return true;
 }
 
 void Exit(void) {
-    for (int i = 0; i < listcount; i++) {
-        if (memlist[i]) {
-            if (memlist[i]->memptr) {
-                free(memlist[i]->memptr);
+    for (auto mlist : memlist) {
+        if (mlist) {
+            if (mlist->memptr) {
+                delete mlist->memptr;
             }
-            delete memlist[i];
+            delete mlist;
         }
     }
-    listcount = 0;
-    free(memlist);
+    memlist.clear();
 }
 
 MemoryList *GetList(Ia64Addr addr) {
-    for (int i = 0; i < listcount; i++) {
-        if (memlist[i]->InRange(addr)) {
-            return memlist[i];
+    for (auto mlist : memlist) {
+        if (mlist->InRange(addr)) {
+            return mlist;
         }
     }
+
     // list wasn't found, create it
-    memlist = (MemoryList **)realloc(memlist, sizeof(MemoryList *) * (listcount + 1));
-    
-    return (memlist[listcount++] = MakeList(addr));
+    auto outlist = MakeList(addr);
+    memlist.push_back(outlist);
+    return outlist;
 }
 
 

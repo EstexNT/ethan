@@ -2,12 +2,12 @@
 
 //#define DEBUGPRINT
 
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdarg.h>
-#include <inttypes.h>
+#include <cstdlib>
+#include <cstdint>
+#include <cstdio>
+#include <cstring>
+#include <cstdarg>
+#include <cinttypes>
 
 #define NELEM(a) ((size_t) (sizeof((a)) / (sizeof((a)[0]))))
 

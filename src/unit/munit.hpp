@@ -1,5 +1,4 @@
 #pragma once
-#include <stdio.h>
 #include "cpu.hpp"
 #include "hint.hpp"
 #include "insttypes/alu.hpp"

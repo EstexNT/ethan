@@ -39,7 +39,7 @@ void Handle(Ia64Bundle *bundle, Ia64Cpu *cpu, uint64_t slot) {
                                     return;
                                 }
                                 default: {
-                                    fprintf(stderr, "unimpl i unit misc ext 6b 3 %x\n", (slot >> 27) & 0xf);
+                                    fprintf(stderr, "unimpl i unit misc ext 6b 3 %x\n", uint32_t((slot >> 27) & 0xf));
                                     cpu->halt = true;
                                     return;
                                 }
@@ -47,7 +47,7 @@ void Handle(Ia64Bundle *bundle, Ia64Cpu *cpu, uint64_t slot) {
                             return;
                         }
                         default: {
-                            fprintf(stderr, "unimpl i unit misc ext 6b %x\n", (slot >> 31) & 3);
+                            fprintf(stderr, "unimpl i unit misc ext 6b %x\n", uint32_t((slot >> 31) & 3));
                             cpu->halt = true;
                             return;
                         }
@@ -84,7 +84,7 @@ void Handle(Ia64Bundle *bundle, Ia64Cpu *cpu, uint64_t slot) {
                         uint8_t s = (slot >> 36) & 1;
                         uint64_t imm = s;
 
-                        printf("(qp %d) dep r%d = %d, r%d, %d, %d\n", qp, r1, SignExt(imm, 1), r3, cpos6b, len6d);
+                        printf("(qp %d) dep r%d = %ld, r%d, %d, %d\n", qp, r1, SignExt(imm, 1), r3, cpos6b, len6d);
                         if (cpu->branched) {
                             return;
                         }

@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include "bundle.hpp"
 #include "cpu.hpp"
 

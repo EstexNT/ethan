@@ -1,5 +1,5 @@
 #pragma once
-#include "common.h"
+#include "common.hpp"
 #include "memory.hpp"
 #include "fp.hpp"
 #include "bundle.hpp"
@@ -36,7 +36,8 @@ public:
     #define FPR_ZEROREG 0
     #define FPR_ONEREG  1
     struct Fpr {
-        struct FprVal : Ia64Float {
+        struct FprVal {
+            Ia64Float val;
             int id;
             Ia64Float operator=(Ia64Float f) {
                 if (id == FPR_ZEROREG) {
@@ -47,7 +48,7 @@ public:
                     printf("trying to write one fpr\n");
                     return Ia64Float(1);
                 }
-                return Ia64Float::operator=(f);
+                return (val = f);
             }
         } _val[128];
         FprVal &operator[](int idx) {
@@ -154,11 +155,6 @@ EC = 66         # Epilog Count Register
             uint32_t gr:7; // general reg
             uint32_t fr:7; // float reg
             uint32_t pr:6; // predicate reg
-           // Rrb() {
-            //    gr = 0;
-            //    fr = 0;
-            //    pr = 0;
-            //}
         }; // register rename base
         union {
             struct {
@@ -169,14 +165,9 @@ EC = 66         # Epilog Count Register
             };
             uint64_t raw;
         };
-    Cfm() {
-        sof = 0;
-        sol = 0;
-        sor = 0;
-        rrb.gr = 0;
-        rrb.fr = 0;
-        rrb.pr = 0;
-    }
+        Cfm() {
+            raw = 0;
+        }
     } cfm; // current frame marker
 
     struct Psr {
@@ -242,10 +233,10 @@ EC = 66         # Epilog Count Register
     }
 
     Ia64Regs() {
-        gpr[GPR_ZEROREG].val = uint64_t(0);
+        gpr[GPR_ZEROREG].val = 0;
         gpr[GPR_ZEROREG].nat = false;
-        fpr[FPR_ZEROREG].val = 0;
-        fpr[FPR_ONEREG].val = 1;
+        fpr._val[FPR_ZEROREG].val = Ia64Float(0); // TODO: proper float
+        fpr._val[FPR_ONEREG].val = Ia64Float(1); // TODO: proper float
         pr[PR_ONEREG].val = 1;
         for (int i = 1; i < NELEM(gpr); i++) {
             gpr[i].val = uint64_t(0);
@@ -263,6 +254,7 @@ EC = 66         # Epilog Count Register
         for (int i = 0; i < NELEM(ar); i++) {
             ar[i] = 0;
         }
+        psr.raw = 0; // TODO: proper psr
         cpuid[0].val = MakeVendorInfo("Ethanium");
         cpuid[3].val = MakeVersionInfo(4, 0, 0, 0, 0);
         cpuid[1].val = 0;

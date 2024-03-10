@@ -1,5 +1,3 @@
-#include <stdio.h>
-#include <stdint.h>
 #include "cpu.hpp"
 #include "memory.hpp"
 
