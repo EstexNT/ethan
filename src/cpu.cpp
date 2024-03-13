@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iomanip>
+#include <array>
 #include "cpu.hpp"
 
 
@@ -91,7 +92,15 @@ void Ia64Cpu::run(void) {
         Memory::ReadAt<Ia64Bundle>(&bundle, regs.ip);
         printf("%lx:\t", regs.ip);
         debugprintf("bundle: %016" PRIx64 " %016" PRIx64 "\n", bundle.raw[1], bundle.raw[0]);
-        bundle.Handle(this);
+        auto handled = bundle.Handle(this);
+        for (unsigned int i = 0; i < handled.size(); i++) {
+            if (branched) {
+                printf("(no inst; branched!)\n");
+            } else {
+                Ia64Format format { &bundle, i };
+                handled[i](&format, this);
+            }
+        }
         if (!branched) {
             regs.ip += IA64BUNDLESIZE; 
         } else {

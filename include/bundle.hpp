@@ -1,7 +1,12 @@
 #pragma once
+
+#include <array>
 #include "common.hpp"
 
+struct Ia64Format;
 class Ia64Cpu;
+typedef void (*HandleFn)(Ia64Format *, Ia64Cpu *);
+
 struct Ia64Bundle {
     #define IA64BUNDLESIZE 0x10
     #pragma pack(push,1)
@@ -20,7 +25,7 @@ struct Ia64Bundle {
         raw[0] = raw[1] = 0;
     }
 
-    void Handle(Ia64Cpu *cpu);
+    std::array<HandleFn, 3> Handle(Ia64Cpu *cpu);
 };
 
 enum Ia64BundleTemplate {

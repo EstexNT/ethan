@@ -1,6 +1,8 @@
 ~ keep the zero/one registers as constants, do not allow overwriting of them
-- convert ugly big switch cases into tables (like in compare.cpp)
-- preferably have a separate thing for formats and for execution?
-- prettify the `if (cpu->branched) {return;}`'s littered in code (related to #2)
-    - maybe make the Handle functions return a func ptr which will be put into an array which then will be executed 
+~ revamp code
+    ~ convert ugly big switch cases into tables 
+    ~ preferably have a separate thing for formats and for execution?
+    ~ prettify the `if (cpu->branched) {return;}`'s littered in code 
+        ~ maybe make the Handle functions return a func ptr which will be put into an array which then will be executed 
+- separate disassembly and execution
 ~ convert this whole thing to system emulation 

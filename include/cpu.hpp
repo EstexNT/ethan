@@ -2,7 +2,7 @@
 #include "common.hpp"
 #include "memory.hpp"
 #include "fp.hpp"
-#include "bundle.hpp"
+#include "format.hpp"
 
 class Ia64Regs {
 public:
