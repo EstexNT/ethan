@@ -94,6 +94,10 @@ void Ia64Cpu::run(void) {
         debugprintf("bundle: %016" PRIx64 " %016" PRIx64 "\n", bundle.raw[1], bundle.raw[0]);
         auto handled = bundle.Handle(this);
         for (unsigned int i = 0; i < handled.size(); i++) {
+            if (halt) {
+                printf("halted\n");
+                break;
+            }
             if (branched) {
                 printf("(no inst; branched!)\n");
             } else {

@@ -13,10 +13,6 @@
 
 typedef uint64_t Ia64Addr;
 
-static inline uint16_t Imm14(uint8_t sign, uint8_t imm6d, uint8_t imm7b) {
-    return (sign << 13) | (imm6d << 7) | (imm7b);
-}
-
 static inline uint64_t SignExt(uint64_t value, uint8_t pos) {
     uint64_t out = value;
     if (pos >= 64) {

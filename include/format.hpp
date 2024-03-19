@@ -16,6 +16,19 @@ struct Ia64Format {
         } common;
 
 
+        // A //
+        struct {
+            uint64_t qp:6;
+            uint64_t r1:7;
+            uint64_t imm7b:7;
+            uint64_t r3:2;
+            uint64_t imm5c:5;
+            uint64_t imm9d:9;
+            uint64_t s:1;
+            uint64_t const9:4;
+        } a5; // Add Imm22
+
+
         // I //
         struct {
             uint64_t qp:6;
@@ -26,9 +39,41 @@ struct Ia64Format {
             uint64_t i:1;
             uint64_t const0:4;
         } i19; // Break/Nop
+        struct {
+            uint64_t qp:6;
+            uint64_t b1:3;
+            uint64_t:4;
+            uint64_t r2:7;
+            uint64_t wh:2;
+            uint64_t x:1;
+            uint64_t ih:1;
+            uint64_t timm9c:9;
+            uint64_t x3:3;
+            uint64_t:1;
+            uint64_t const0:4;
+        } i21; // Move to BR
+        struct {
+            uint64_t qp:6;
+            uint64_t r1:7;
+            uint64_t:14;
+            uint64_t x6:6;
+            uint64_t x3:3;
+            uint64_t:1;
+            uint64_t const0:4;
+        } i25; // Move from Pred/IP
 
 
         // M //
+        struct {
+            uint64_t qp:6;
+            uint64_t:7;
+            uint64_t r2:7;
+            uint64_t ar3:7;
+            uint64_t x6:6;
+            uint64_t x3:3;
+            uint64_t:1;
+            uint64_t const1:4;
+        } m29; // Move to AR
         struct {
             uint64_t qp:6;
             uint64_t imm20a:20;
@@ -39,6 +84,16 @@ struct Ia64Format {
             uint64_t i:1;
             uint64_t const0:4;
         } m37; // Break/Nop
+        struct {
+            uint64_t qp:6;
+            uint64_t r1:7;
+            uint64_t:7;
+            uint64_t r3:7;
+            uint64_t x6:6;
+            uint64_t x3:3;
+            uint64_t:1;
+            uint64_t const1:4;
+        } m43; // Mv from Ind
 
 
         // B // 

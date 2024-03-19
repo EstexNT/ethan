@@ -16,7 +16,9 @@ std::array<HandleFn, 3> Ia64Bundle::Handle(Ia64Cpu *cpu) {
 
     switch(_template) {
         case Ia64BundleTemplate::MII_0: 
-        case Ia64BundleTemplate::MII_1: {
+        case Ia64BundleTemplate::MII_1: 
+        case Ia64BundleTemplate::MII_2: 
+        case Ia64BundleTemplate::MII_3: {
             debugprintf("bundle MII %x\n", _template);
             out[0] = MUnit::Handle(&format0, cpu);
             out[1] = IUnit::Handle(&format1, cpu);

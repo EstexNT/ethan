@@ -232,6 +232,11 @@ EC = 66         # Epilog Count Register
         );
     }
 
+    // TODO
+    enum RegType {
+        AR_TYPE = 0,
+    };
+
     Ia64Regs() {
         gpr[GPR_ZEROREG].val = 0;
         gpr[GPR_ZEROREG].nat = false;
@@ -270,6 +275,24 @@ EC = 66         # Epilog Count Register
         // fault is delivered, and this function does not return.
         // whatever ^^^^ is: TODO
     }
+    
+
+    bool IsReadOnlyRegister(RegType type, uint64_t idx) {
+        debugprintf("TODO: is_read_only_register(%d, %ld)\n", (int)type, idx);
+        return false;
+    }
+    bool IsReservedField(RegType type, uint64_t idx, uint64_t val) {
+        debugprintf("TODO: is_reserved_field(%d, %ld, %ld)\n", (int)type, idx, val);
+        return false;
+    }
+    bool IsKernelReg(uint64_t idx) {
+        debugprintf("TODO: is_kernel_reg(%ld)\n", idx);
+        return false;
+    }
+    bool IsIgnoredReg(uint64_t idx) {
+        debugprintf("TODO: is_ignored_reg(%ld)\n", idx);
+        return false;
+    }
 };
 
 class Ia64Alat { // Advanced load address table
@@ -286,6 +309,10 @@ public:
     }
     void PreserveFrame(int a) {
         debugprintf("TODO: rse_preserve_frame(%d)\n", a);
+    }
+    uint64_t UpdateInternalStackPointers(uint64_t val) {
+        debugprintf("TODO: rse_update_internal_stack_pointers(%ld)\n", val);
+        return val;
     }
 };
 
@@ -331,6 +358,9 @@ public:
 
     void RegisterNatConsumptionFault(uint8_t a) {
         debugprintf("Got a register NaT consumption fault with %d\n", a);
+    }
+    void PrivilegedRegisterFault(void) {
+        debugprintf("Got a privileged register fault!!\n");
     }
 
 
