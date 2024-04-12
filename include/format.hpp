@@ -32,6 +32,18 @@ struct Ia64Format {
         // I //
         struct {
             uint64_t qp:6;
+            uint64_t r1:7;
+            uint64_t y:1;
+            uint64_t pos6b:6;
+            uint64_t r3:7;
+            uint64_t len6d:6;
+            uint64_t x:1;
+            uint64_t x2:2;
+            uint64_t:1;
+            uint64_t const5:5;
+        } i11; // Extract
+        struct {
+            uint64_t qp:6;
             uint64_t imm20a:20;
             uint64_t:1;
             uint64_t x6:6;
