@@ -1,4 +1,5 @@
 - more instructions
+- proper memory emulation (mmu)
 - support i460gx
 - separate disassembly and execution
 

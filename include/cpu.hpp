@@ -235,6 +235,7 @@ EC = 66         # Epilog Count Register
     // TODO
     enum RegType {
         AR_TYPE = 0,
+        CPUID_TYPE = 1,
     };
 
     Ia64Regs() {
@@ -269,29 +270,77 @@ EC = 66         # Epilog Count Register
         }
     }
 
+    // If r1 targets an out-of-frame stacked register (as defined by CFM), an illegal operation 
+    // fault is delivered, and this function does not return.
     void CheckTargetRegister(uint64_t r) {
-        debugprintf("TODO: check_target_register(%ld)\n", r);
-        // If r1 targets an out-of-frame stacked register (as defined by CFM), an illegal operation 
-        // fault is delivered, and this function does not return.
-        // whatever ^^^^ is: TODO
+        if (r >= (cfm.sof + 32)) {
+            printf("target register %ld out-of-frame!!\n", r);
+            exit(1);
+        }
     }
     
 
+    // also called is_read_only_reg in the manual... lol
     bool IsReadOnlyRegister(RegType type, uint64_t idx) {
-        debugprintf("TODO: is_read_only_register(%d, %ld)\n", (int)type, idx);
+        switch (type) {
+            case AR_TYPE:
+                if (idx == Ia64Regs::Ar::Type::BSP) {
+                    return true;
+                }
+                break;
+            default:
+                debugprintf("TODO: is_read_only_register(%d, %ld)\n", (int)type, idx);
+                return false;
+        }
         return false;
     }
+
     bool IsReservedField(RegType type, uint64_t idx, uint64_t val) {
-        debugprintf("TODO: is_reserved_field(%d, %ld, %ld)\n", (int)type, idx, val);
+        switch (type) {
+            case AR_TYPE:
+                if ((idx >= 8) && (idx <= 15)) {
+                    return true;
+                }
+                if (idx == 20) {
+                    return true;
+                }
+                if ((idx == 22) || (idx == 23)) {
+                    return true;
+                }
+                if (idx == 31) {
+                    return true;
+                }
+                if ((idx == 33) || (idx == 34) || (idx == 35)) {
+                    return true;
+                }
+                if ((idx == 37) || (idx == 38) || (idx == 39)) {
+                    return true;
+                }
+                if ((idx == 41) || (idx == 42) || (idx == 43)) {
+                    return true;
+                }
+                if ((idx == 45) || (idx == 46) || (idx == 47)) {
+                    return true;
+                }
+                if ((idx >= 67) && (idx <= 111)) {
+                    return true;
+                }
+
+                // TODO: actually check for reserved fields
+                
+                //break;
+            default:
+                debugprintf("TODO: is_reserved_field(%d, %ld, %ld)\n", (int)type, idx, val);
+                return false;
+        }
         return false;
     }
+    // TODO: move those fellas into Ia64Regs::Ar
     bool IsKernelReg(uint64_t idx) {
-        debugprintf("TODO: is_kernel_reg(%ld)\n", idx);
-        return false;
+        return (idx >= 0) && (idx <= 7);
     }
     bool IsIgnoredReg(uint64_t idx) {
-        debugprintf("TODO: is_ignored_reg(%ld)\n", idx);
-        return false;
+        return ((idx >= 48) && (idx <= 63)) || ((idx >= 112) && (idx <= 127));
     }
 };
 
@@ -341,37 +390,67 @@ public:
 
     // checks //
 
-    bool UnimplementedVirtualAddress(uint64_t ip) {
-        debugprintf("TODO: unimplemented_virtual_address\n");
+    bool UnimplementedVirtualAddress(uint64_t vaddr) {
+        // assume all and any virtual address is implemented (for now)
         return false;
     }
-
+    // TODO: 
+    // traps and faults are interrupts so they branch
+    // into the vector 
     // faults //
+    void FaultPrint(const char *fault, ...) {
+        va_list list;
+        va_start(list, fault);
+        {
+            std::string faultstr = "=================\n\n\nGOT A FAULT: ";
+            faultstr += fault;
+            faultstr += "\n\n\n=================";
+            vfprintf(stderr, faultstr.c_str(), list);
+        }
+        va_end(list);
+    }
 
     void IllegalOperationFault(void) {
-        debugprintf("Got an illegal operation fault!!\n");
+        FaultPrint("Illegal Operation");
+        halt = true;
     }
 
     void ReservedRegisterFieldFault(void) {
-        debugprintf("Got a reserved register field fault!!!\n");
+        FaultPrint("Reserved Register Field");
+        halt = true;
     }
 
-    void RegisterNatConsumptionFault(uint8_t a) {
-        debugprintf("Got a register NaT consumption fault with %d\n", a);
+    void RegisterNatConsumptionFault(uint32_t a) {
+        FaultPrint("Register NaT Consumption with %d", a);
+        halt = true;
     }
     void PrivilegedRegisterFault(void) {
-        debugprintf("Got a privileged register fault!!\n");
+        FaultPrint("Privileged Register");
+        halt = true;
     }
 
 
     // traps //
+    void TrapPrint(const char *trap, ...) {
+        va_list list;
+        va_start(list, trap);
+        {
+            std::string trapstr = "=================\n\n\nGOT A TRAP: ";
+            trapstr += trap;
+            trapstr += "\n\n\n=================";
+            vfprintf(stderr, trapstr.c_str(), list);
+        }
+        va_end(list);
+    }
     
     void UnimplementedInstructionAddressTrap(int a, uint64_t ip) {
-        debugprintf("Got a unimplemented_instruction_address_trap!! %lx %lx\n", a, ip);
+        TrapPrint("Unimplmented Insruction Address at %lx", ip);
+        halt = true;
     }
 
     void TakenBranchTrap(void) {
-        debugprintf("Got a taken_branch_trap!!\n");
+        TrapPrint("Taken Branch");
+        halt = true;
     }
 
     ////////////
