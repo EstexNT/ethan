@@ -27,6 +27,30 @@ struct Ia64Format {
             uint64_t s:1;
             uint64_t const9:4;
         } a5; // Add Imm22
+        struct {
+            uint64_t qp:6;
+            uint64_t p1:6;
+            uint64_t c:1;
+            uint64_t r2:7;
+            uint64_t r3:7;
+            uint64_t p2:6;
+            uint64_t ta:1;
+            uint64_t x2:2;
+            uint64_t tb:1;
+            uint64_t constCtoE:4;
+        } a6; // Compare
+        struct {
+            uint64_t qp:6;
+            uint64_t p1:6;
+            uint64_t c:1;
+            uint64_t imm7b:7;
+            uint64_t r3:7;
+            uint64_t p2:6;
+            uint64_t ta:1;
+            uint64_t x2:2;
+            uint64_t s:1;
+            uint64_t constCtoE:4;
+        } a8; // Compare Imm8
 
 
         // I //
@@ -140,6 +164,18 @@ struct Ia64Format {
             uint64_t i:1;
             uint64_t const02:4;
         } b9; // Break/Nop
+
+
+        // F //
+        struct {
+            uint64_t qp:6;
+            uint64_t imm20a:20;
+            uint64_t:1;
+            uint64_t x6:6;
+            uint64_t x3:3;
+            uint64_t i:1;
+            uint64_t const0:4;
+        } f15; // Break/Nop
 
 
         uint64_t raw;

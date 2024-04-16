@@ -83,7 +83,7 @@ DECLINST(SysMemMgmt0Ext) {
     //                         [x4][x2]
     static HandleFn sysexttable[16][4] = {
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
-        { NopM,            UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
+        { NopM,           UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
@@ -191,7 +191,7 @@ DECLINST(SysMemMgmt1Ext) {
 DECLINST(SysMemMgmt1) {
     static HandleFn op1handle[8] = {
         SysMemMgmt1Ext, UnimplInstOp, UnimplInstOp, UnimplInstOp,
-        UnimplInstOp, UnimplInstOp, UnimplInstOp, UnimplInstOp,
+        UnimplInstOp,   UnimplInstOp, UnimplInstOp, UnimplInstOp,
     };
     op1handle[format->m37.x3](format, cpu);
 }
@@ -201,7 +201,7 @@ DECLINST(SysMemMgmt1) {
 //                  [op]
 HandleFn handletable[8] = {
     SysMemMgmt0, SysMemMgmt1, UnimplInst, UnimplInst, 
-    UnimplInst,  UnimplInst, UnimplInst, UnimplInst, 
+    UnimplInst,  UnimplInst,  UnimplInst, UnimplInst, 
 };
 
 

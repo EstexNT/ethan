@@ -57,7 +57,7 @@ DECLINST(BrCond) {
 
 DECLINST(IPRelBrType) {
     static HandleFn op4handle[8] = {
-        BrCond, UnimplInstOp4, UnimplInstOp4, UnimplInstOp4,
+        BrCond,        UnimplInstOp4, UnimplInstOp4, UnimplInstOp4,
         UnimplInstOp4, UnimplInstOp4, UnimplInstOp4, UnimplInstOp4,
     };
 
@@ -65,9 +65,9 @@ DECLINST(IPRelBrType) {
 }
 
 // 4.5 page 324
-// [op] (everything else is resolved inside the fn's)
+//                  [op]
 HandleFn handletable[8] = {
-    UnimplInst, UnimplInst, UnimplInst, UnimplInst, 
+    UnimplInst,  UnimplInst, UnimplInst, UnimplInst, 
     IPRelBrType, UnimplInst, UnimplInst, UnimplInst,
 };
 

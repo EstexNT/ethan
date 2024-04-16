@@ -90,7 +90,7 @@ void Ia64Cpu::run(void) {
             return;
         }
         Memory::ReadAt<Ia64Bundle>(&bundle, regs.ip);
-        printf("%lx:\t", regs.ip);
+        printf("%lx:\n", regs.ip);
         debugprintf("bundle: %016" PRIx64 " %016" PRIx64 "\n", bundle.raw[1], bundle.raw[0]);
         auto handled = bundle.Handle(this);
         for (unsigned int i = 0; i < handled.size(); i++) {

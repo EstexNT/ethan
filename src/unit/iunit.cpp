@@ -34,7 +34,8 @@ DECLINST(MovFromIP) {
     printf("(qp %d) mov r%d = ip\n", format->i25.qp, format->i25.r1);
     if (cpu->regs.pr[format->i25.qp].val) {
         cpu->regs.CheckTargetRegister(format->i25.r1);
-        cpu->regs.gpr[format->i25.r1] = cpu->regs.ip;
+        // TODO
+        cpu->regs.gpr[format->i25.r1] = cpu->regs.ip + IA64BUNDLESIZE;
         cpu->regs.gpr[format->i25.r1] = false;
     }
 }

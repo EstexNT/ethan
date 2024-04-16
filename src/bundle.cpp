@@ -5,6 +5,7 @@
 #include "unit/iunit.hpp"
 #include "unit/bunit.hpp"
 #include "unit/lxunit.hpp"
+#include "unit/funit.hpp"
 
 
 std::array<HandleFn, 3> Ia64Bundle::Handle(Ia64Cpu *cpu) {
@@ -25,7 +26,8 @@ std::array<HandleFn, 3> Ia64Bundle::Handle(Ia64Cpu *cpu) {
             out[2] = IUnit::Handle(&format2, cpu);
             break;
         }
-        case Ia64BundleTemplate::MLX_4: {
+        case Ia64BundleTemplate::MLX_4:
+        case Ia64BundleTemplate::MLX_5: {
             debugprintf("bundle MLX %x\n", _template);
             out[0] = MUnit::Handle(&format0, cpu);
             auto lx = LXUnit::Handle(&format1, &format2, cpu);
@@ -39,6 +41,13 @@ std::array<HandleFn, 3> Ia64Bundle::Handle(Ia64Cpu *cpu) {
             debugprintf("bundle MMI %x\n", _template);
             out[0] = MUnit::Handle(&format0, cpu);
             out[1] = MUnit::Handle(&format1, cpu);
+            out[2] = IUnit::Handle(&format2, cpu);
+            break;
+        }
+        case Ia64BundleTemplate::MFI_D: {
+            debugprintf("bundle MFI %x\n", _template);
+            out[0] = MUnit::Handle(&format0, cpu);
+            out[1] = FUnit::Handle(&format1, cpu);
             out[2] = IUnit::Handle(&format2, cpu);
             break;
         }
