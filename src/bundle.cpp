@@ -37,13 +37,15 @@ std::array<HandleFn, 3> Ia64Bundle::Handle(Ia64Cpu *cpu) {
         }
         case Ia64BundleTemplate::MMI_8: 
         case Ia64BundleTemplate::MMI_9: 
-        case Ia64BundleTemplate::MMI_A: {
+        case Ia64BundleTemplate::MMI_A:
+        case Ia64BundleTemplate::MMI_B: {
             debugprintf("bundle MMI %x\n", _template);
             out[0] = MUnit::Handle(&format0, cpu);
             out[1] = MUnit::Handle(&format1, cpu);
             out[2] = IUnit::Handle(&format2, cpu);
             break;
         }
+        case Ia64BundleTemplate::MFI_C:
         case Ia64BundleTemplate::MFI_D: {
             debugprintf("bundle MFI %x\n", _template);
             out[0] = MUnit::Handle(&format0, cpu);
@@ -51,6 +53,15 @@ std::array<HandleFn, 3> Ia64Bundle::Handle(Ia64Cpu *cpu) {
             out[2] = IUnit::Handle(&format2, cpu);
             break;
         }
+        case Ia64BundleTemplate::MMF_E:
+        case Ia64BundleTemplate::MMF_F: {
+            debugprintf("bundle MMF %x\n", _template);
+            out[0] = MUnit::Handle(&format0, cpu);
+            out[1] = MUnit::Handle(&format1, cpu);
+            out[2] = FUnit::Handle(&format2, cpu);
+            break;
+        }
+        case Ia64BundleTemplate::MIB_10:
         case Ia64BundleTemplate::MIB_11: {
             debugprintf("bundle MIB %x\n", _template);
             out[0] = MUnit::Handle(&format0, cpu);
@@ -66,6 +77,15 @@ std::array<HandleFn, 3> Ia64Bundle::Handle(Ia64Cpu *cpu) {
             out[2] = BUnit::Handle(&format2, cpu);
             break;
         }
+        case Ia64BundleTemplate::BBB_16:
+        case Ia64BundleTemplate::BBB_17: {
+            debugprintf("bundle BBB %x\n", _template);
+            out[0] = BUnit::Handle(&format0, cpu);
+            out[1] = BUnit::Handle(&format1, cpu);
+            out[2] = BUnit::Handle(&format2, cpu);
+            break;
+        }
+        case Ia64BundleTemplate::MMB_18:
         case Ia64BundleTemplate::MMB_19: {
             debugprintf("bundle MMB %x\n", _template);
             out[0] = MUnit::Handle(&format0, cpu);
@@ -73,8 +93,16 @@ std::array<HandleFn, 3> Ia64Bundle::Handle(Ia64Cpu *cpu) {
             out[2] = BUnit::Handle(&format2, cpu);
             break;
         }
+        case Ia64BundleTemplate::MFB_1C:
+        case Ia64BundleTemplate::MFB_1D: {
+            debugprintf("bundle MFB %x\n", _template);
+            out[0] = MUnit::Handle(&format0, cpu);
+            out[1] = FUnit::Handle(&format1, cpu);
+            out[2] = BUnit::Handle(&format2, cpu);
+            break;
+        }
         default: {
-            fprintf(stderr, "unimplemented bundle %x!!\n", _template);
+            fprintf(stderr, "bad bundle %x!!\n", _template);
             exit(1);
         }
     }
