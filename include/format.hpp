@@ -20,6 +20,18 @@ struct Ia64Format {
         struct {
             uint64_t qp:6;
             uint64_t r1:7;
+            uint64_t r2:7;
+            uint64_t r3:7;
+            uint64_t x2b:2;
+            uint64_t x4:4;
+            uint64_t ve:1;
+            uint64_t x2a:2;
+            uint64_t:1;
+            uint64_t const8:4;
+        } a1; // ALU
+        struct {
+            uint64_t qp:6;
+            uint64_t r1:7;
             uint64_t imm7b:7;
             uint64_t r3:2;
             uint64_t imm5c:5;
@@ -177,6 +189,19 @@ struct Ia64Format {
             uint64_t const0:4;
         } f15; // Break/Nop
 
+
+        // X //
+        struct {
+            uint64_t qp:6;
+            uint64_t r1:7;
+            uint64_t imm7b:7;
+            uint64_t vc:1;
+            uint64_t ic:1;
+            uint64_t imm5c:5;
+            uint64_t imm9d:9;
+            uint64_t i:1;
+            uint64_t const6:4;
+        } x2; // Move Imm64
 
         uint64_t raw;
     };

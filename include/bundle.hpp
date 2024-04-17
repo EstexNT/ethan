@@ -6,6 +6,7 @@
 struct Ia64Format;
 class Ia64Cpu;
 typedef void (*HandleFn)(Ia64Format *, Ia64Cpu *);
+typedef void (*LXHandleFn)(Ia64Format *, Ia64Format *, Ia64Cpu *);
 
 struct Ia64Bundle {
     #define IA64BUNDLESIZE 0x10

@@ -30,9 +30,8 @@ std::array<HandleFn, 3> Ia64Bundle::Handle(Ia64Cpu *cpu) {
         case Ia64BundleTemplate::MLX_5: {
             debugprintf("bundle MLX %x\n", _template);
             out[0] = MUnit::Handle(&format0, cpu);
-            auto lx = LXUnit::Handle(&format1, &format2, cpu);
-            out[1] = lx.first;
-            out[2] = lx.second;
+            out[1] = nullptr; // indicator for lxunit
+            out[2] = LXUnit::Handle(&format1, &format2, cpu);
             break;
         }
         case Ia64BundleTemplate::MMI_8: 

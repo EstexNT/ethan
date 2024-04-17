@@ -147,6 +147,21 @@ EC = 66         # Epilog Count Register
 
     } ar[128]; // application reg
 
+    struct Msr {
+        uint64_t msr_0x5dd = 0;
+
+        uint64_t Read(uint64_t index) {
+            switch (index) {
+                case 0x5dd:
+                    return msr_0x5dd;
+                default:
+                    fprintf(stderr, "unimplemented msr %ld\n", index);
+                    exit(1);
+                    return 0;
+            }
+        }
+    } msr; // model-specific reg
+
     uint64_t ip; // instruction pointer
 
     #pragma pack(push,1)
@@ -236,6 +251,7 @@ EC = 66         # Epilog Count Register
     enum RegType {
         AR_TYPE = 0,
         CPUID_TYPE = 1,
+        MSR_TYPE = 2,
     };
 
     Ia64Regs() {
@@ -426,6 +442,10 @@ public:
     }
     void PrivilegedRegisterFault(void) {
         FaultPrint("Privileged Register");
+        halt = true;
+    }
+    void PrivilegedOperationFault(uint32_t a) {
+        FaultPrint("Privileged Operation with %d", a);
         halt = true;
     }
 

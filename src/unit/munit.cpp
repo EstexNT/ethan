@@ -14,9 +14,12 @@ static inline uint64_t IgnoredFieldMask(Ia64Regs::RegType type, uint64_t idx, ui
     debugprintf("TODO: ignored_field_mask(%d, %ld, %ld)\n", (int)type, idx, val);
     return val;
 }
-static inline bool IsReservedReg(Ia64Regs::RegType type, uint64_t ar) {
+static inline bool IsReservedReg(Ia64Regs::RegType type, uint64_t ar, Ia64Cpu *cpu) {
     switch (type) {
         case Ia64Regs::CPUID_TYPE:
+            if (ar >= (cpu->regs.cpuid[3].val & 0xff)) {
+                return true;
+            }
             return false;
 
         case Ia64Regs::AR_TYPE:
@@ -48,6 +51,10 @@ static inline bool IsReservedReg(Ia64Regs::RegType type, uint64_t ar) {
                 return true;
             }
             break;
+
+        case Ia64Regs::MSR_TYPE:
+            return false;
+        
         default:
             debugprintf("TODO: is_reserved_reg(%d, %lx)\n", (int)type, ar);
             return false;
@@ -115,13 +122,13 @@ DECLINST(SysMemMgmt0) {
 
 DECLINST(MovFromCPUID) {
     printf("(qp %d) mov r%d = cpuid[r%d]\n", format->m43.qp, format->m43.r1, format->m43.r3);
-    if (cpu->regs.pr[format->m29.qp].val) {
+    if (cpu->regs.pr[format->m43.qp].val) {
         uint8_t tmp_index = uint8_t(cpu->regs.gpr[format->m43.r3].val & 0xff);
         cpu->regs.CheckTargetRegister(format->m43.r1);
         if (cpu->regs.gpr[format->m43.r1].nat) {
             cpu->RegisterNatConsumptionFault(0);
         }
-        if (IsReservedReg(Ia64Regs::CPUID_TYPE, tmp_index)) {
+        if (IsReservedReg(Ia64Regs::CPUID_TYPE, tmp_index, cpu)) {
             cpu->ReservedRegisterFieldFault();
         }
         cpu->regs.gpr[format->m43.r1] = cpu->regs.cpuid[tmp_index].val;
@@ -132,7 +139,7 @@ DECLINST(MovFromCPUID) {
 DECLINST(MovMToAR) {
     printf("(qp %d) mov.m ar%d = r%d\n", format->m29.qp, format->m29.ar3, format->m29.r2);
     if (cpu->regs.pr[format->m29.qp].val) {
-        if (IsReservedReg(Ia64Regs::AR_TYPE, format->m29.ar3)) {
+        if (IsReservedReg(Ia64Regs::AR_TYPE, format->m29.ar3, cpu)) {
             cpu->IllegalOperationFault();
         }
         uint64_t tmp_val = cpu->regs.gpr[format->m29.r2].val;
@@ -166,6 +173,27 @@ DECLINST(MovMToAR) {
     }
 }
 
+DECLINST(MovFromMSR) {
+    // not in the doc!
+    printf("(qp %d) mov r%d = msr[r%d]\n", format->m43.qp, format->m43.r1, format->m43.r3);
+    if (cpu->regs.pr[format->m43.qp].val) {
+        uint64_t tmp_index = cpu->regs.gpr[format->m43.r3].val;
+        cpu->regs.CheckTargetRegister(format->m43.r1);
+        if (cpu->regs.psr.cpl != 0) {
+            cpu->PrivilegedOperationFault(0);
+        }
+        if (cpu->regs.gpr[format->m43.r1].nat) {
+            cpu->RegisterNatConsumptionFault(0);
+        }
+        if (IsReservedReg(Ia64Regs::MSR_TYPE, tmp_index, cpu)) {
+            cpu->ReservedRegisterFieldFault();
+        }
+        cpu->regs.gpr[format->m43.r1] = cpu->regs.msr.Read(tmp_index);
+        cpu->regs.gpr[format->m43.r1] = false;
+    }
+
+}
+
 DECLINST(SysMemMgmt1Ext) {
     static HandleFn sysexttable1[16][4] = {
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
@@ -174,7 +202,7 @@ DECLINST(SysMemMgmt1Ext) {
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
-        { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
+        { UnimplInstOpX3, MovFromMSR,     UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, MovFromCPUID,   UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },

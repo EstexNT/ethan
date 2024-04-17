@@ -102,6 +102,11 @@ void Ia64Cpu::run(void) {
                 printf("(no inst; branched!)\n");
             } else {
                 Ia64Format format { &bundle, i };
+                if (handled[i] == nullptr) {
+                    Ia64Format format1 { &bundle, i + 1 };
+                    ((LXHandleFn)handled[i + 1])(&format, &format1, this);
+                    break;
+                }
                 handled[i](&format, this);
             }
         }
