@@ -148,16 +148,57 @@ EC = 66         # Epilog Count Register
     } ar[128]; // application reg
 
     struct Msr {
+        #define RD(off) \
+            case off: \
+                return msr_##off;
+        
+        #define WR(off) \
+            case off: \
+                msr_##off = val; \
+                return;
+
+            
+        // TODO: maybe make an std::unordered_map
+        uint64_t msr_0x20 = 0;
+        uint64_t msr_0x42 = 0;
+        uint64_t msr_0xe3 = 0;
+        uint64_t msr_0x181 = 0;
+        uint64_t msr_0x1e8 = 0;
+        uint64_t msr_0x1e9 = 0;
         uint64_t msr_0x5dd = 0;
+        uint64_t msr_0x600 = 0;
+        uint64_t msr_0x601 = 0;
 
         uint64_t Read(uint64_t index) {
             switch (index) {
-                case 0x5dd:
-                    return msr_0x5dd;
+                RD(0x20);
+                RD(0x42);
+                RD(0xe3);
+                RD(0x181);
+                RD(0x1e8);
+                RD(0x1e9);
+                RD(0x5dd);
+                RD(0x601);
                 default:
-                    fprintf(stderr, "unimplemented msr %ld\n", index);
+                    fprintf(stderr, "unimplemented read msr 0x%lx\n", index);
                     exit(1);
                     return 0;
+            }
+        }
+        void Write(uint64_t index, uint64_t val) {
+            switch (index) {
+                WR(0x20);
+                WR(0x42);
+                WR(0xe3);
+                WR(0x181);
+                WR(0x1e8);
+                WR(0x1e9);
+                WR(0x5dd);
+                WR(0x601);
+                default:
+                    fprintf(stderr, "unimplemented write msr 0x%lx\n", index);
+                    exit(1);
+                    return;
             }
         }
     } msr; // model-specific reg
@@ -290,6 +331,7 @@ EC = 66         # Epilog Count Register
     // fault is delivered, and this function does not return.
     void CheckTargetRegister(uint64_t r) {
         if (r >= (cfm.sof + 32)) {
+            //cpu->IllegalOperationFault();
             printf("target register %ld out-of-frame!!\n", r);
             exit(1);
         }

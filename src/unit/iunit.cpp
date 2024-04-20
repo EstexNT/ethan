@@ -34,8 +34,7 @@ DECLINST(MovFromIP) {
     printf("(qp %d) mov r%d = ip\n", format->i25.qp, format->i25.r1);
     if (cpu->regs.pr[format->i25.qp].val) {
         cpu->regs.CheckTargetRegister(format->i25.r1);
-        // TODO
-        cpu->regs.gpr[format->i25.r1] = cpu->regs.ip + IA64BUNDLESIZE;
+        cpu->regs.gpr[format->i25.r1] = cpu->regs.ip;
         cpu->regs.gpr[format->i25.r1] = false;
     }
 }
@@ -46,12 +45,19 @@ DECLINST(NopI) {
         // no operation
     }
 }
+DECLINST(MovFromB) {
+    printf("(qp %d) mov r%d = b%d\n", format->i22.qp, format->i22.r1, format->i22.b2);
+    if (cpu->regs.pr[format->i22.qp].val) {
+        cpu->regs.CheckTargetRegister(format->i22.r1);
+        cpu->regs.gpr[format->i22.r1] = cpu->regs.br[format->i22.b2].val;
+        cpu->regs.gpr[format->i22.r1] = false;
+    }
+}
 
 DECLINST(MiscExt) {
-    // weird abuse of x6 here but ok
     static HandleFn miscexthandle[16][4] = {
         { UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30, MovFromIP },
-        { NopI,             UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30 },
+        { NopI,             UnimplInstOp0X30, UnimplInstOp0X30, MovFromB  },
         { UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30 },
         { UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30 },
         { UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30 },
@@ -92,6 +98,29 @@ DECLINST(Misc) {
 }
 
 
+// op = 4 //
+DECLINST(Deposit) {
+    uint64_t len4 = format->i15.len4d + 1;
+    uint64_t pos6 = 63 - format->i15.cpos6d;
+
+    //merge_form, register_form
+
+    printf("(qp %d) dep r%d = r%d, r%d, %ld, %ld\n", format->i15.qp, format->i15.r1, format->i15.r2, format->i15.r3, pos6, len4);
+    if (cpu->regs.pr[format->i15.qp].val) {
+        cpu->regs.CheckTargetRegister(format->i15.r1);
+
+        uint64_t tmpLen = len4;
+        if ((pos6 + tmpLen) > 64) {
+            tmpLen = 64 - pos6;
+        }
+        uint64_t mask = (1 << tmpLen) - 1;
+        cpu->regs.gpr[format->i15.r1] = ((cpu->regs.gpr[format->i15.r2].val & mask) << pos6) 
+                                      | ((cpu->regs.gpr[format->i15.r3].val & ~mask) << pos6);
+        cpu->regs.gpr[format->i15.r1] = cpu->regs.gpr[format->i15.r3].nat || cpu->regs.gpr[format->i15.r2].nat;
+    }
+}
+
+
 // op = 5 //
 
 DECLINST(ExtrU) {
@@ -128,7 +157,7 @@ DECLINST(ShiftTestBit) {
 //                  [op]
 HandleFn handletable[8] = {
     Misc,       UnimplInst,   UnimplInst, UnimplInst,
-    UnimplInst, ShiftTestBit, UnimplInst, UnimplInst,
+    Deposit,    ShiftTestBit, UnimplInst, UnimplInst,
 };
 
 

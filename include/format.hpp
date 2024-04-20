@@ -80,6 +80,15 @@ struct Ia64Format {
         } i11; // Extract
         struct {
             uint64_t qp:6;
+            uint64_t r1:7;
+            uint64_t r2:7;
+            uint64_t r3:7;
+            uint64_t len4d:4;
+            uint64_t cpos6d:6;
+            uint64_t const4:4;
+        } i15; // Deposit
+        struct {
+            uint64_t qp:6;
             uint64_t imm20a:20;
             uint64_t:1;
             uint64_t x6:6;
@@ -103,6 +112,16 @@ struct Ia64Format {
         struct {
             uint64_t qp:6;
             uint64_t r1:7;
+            uint64_t b2:3;
+            uint64_t:11;
+            uint64_t x6:6;
+            uint64_t x3:3;
+            uint64_t:1;
+            uint64_t const0:4;
+        } i22; // Move from BR
+        struct {
+            uint64_t qp:6;
+            uint64_t r1:7;
             uint64_t:14;
             uint64_t x6:6;
             uint64_t x3:3;
@@ -112,6 +131,15 @@ struct Ia64Format {
 
 
         // M //
+        struct {
+            uint64_t qp:6;
+            uint64_t:21;
+            uint64_t x4:4;
+            uint64_t x2:2;
+            uint64_t x3:3;
+            uint64_t:1;
+            uint64_t const0:4;
+        } m24; // Sync/Srlz/ALAT
         struct {
             uint64_t qp:6;
             uint64_t:7;
@@ -132,6 +160,16 @@ struct Ia64Format {
             uint64_t i:1;
             uint64_t const0:4;
         } m37; // Break/Nop
+        struct {
+            uint64_t qp:6;
+            uint64_t:7;
+            uint64_t r2:7;
+            uint64_t r3:7;
+            uint64_t x6:6;
+            uint64_t x3:3;
+            uint64_t:1;
+            uint64_t const1:4;
+        } m42; // Mv to Ind/TR Ins
         struct {
             uint64_t qp:6;
             uint64_t r1:7;

@@ -10,6 +10,9 @@ static inline uint64_t IgnoredFieldMask(Ia64Regs::RegType type, uint64_t idx, ui
                 return val;
             }
             break;
+        case Ia64Regs::MSR_TYPE:
+            // probably has no ignored fields
+            return val;
     }
     debugprintf("TODO: ignored_field_mask(%d, %ld, %ld)\n", (int)type, idx, val);
     return val;
@@ -77,7 +80,13 @@ DECLINST(UnimplInstOpX3) {
 
 
 // op = 0 //
-
+DECLINST(SrlzI) {
+    printf("(qp %d) srlz.i\n", format->m24.qp);
+    if (cpu->regs.pr[format->m24.qp].val) {
+        // TODO:
+        // cpu->InstructionSerialize();
+    }
+}
 DECLINST(NopM) {
     uint32_t imm = (format->m37.i << 20) | format->m37.imm20a;
     printf("(qp %d) nop.m 0x%08x\n", format->m37.qp, imm);
@@ -90,7 +99,7 @@ DECLINST(SysMemMgmt0Ext) {
     //                         [x4][x2]
     static HandleFn sysexttable[16][4] = {
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
-        { NopM,           UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
+        { NopM,           UnimplInstOpX3, UnimplInstOpX3, SrlzI          },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
@@ -191,8 +200,27 @@ DECLINST(MovFromMSR) {
         cpu->regs.gpr[format->m43.r1] = cpu->regs.msr.Read(tmp_index);
         cpu->regs.gpr[format->m43.r1] = false;
     }
-
 }
+DECLINST(MovToMSR) {
+    // not in the doc!
+    printf("(qp %d) mov msr[r%d] = r%d\n", format->m42.qp, format->m42.r3, format->m42.r2);
+    if (cpu->regs.pr[format->m42.qp].val) {
+        uint64_t tmp_index = cpu->regs.gpr[format->m42.r3].val;
+        if (cpu->regs.psr.cpl != 0) {
+            cpu->PrivilegedOperationFault(0);
+        }
+        if (cpu->regs.gpr[format->m42.r2].nat || cpu->regs.gpr[format->m42.r3].nat) {
+            cpu->RegisterNatConsumptionFault(0);
+        }
+        if (IsReservedReg(Ia64Regs::MSR_TYPE, tmp_index, cpu) || 
+        cpu->regs.IsReservedField(Ia64Regs::MSR_TYPE, tmp_index, cpu->regs.gpr[format->m42.r2].val)) {
+            cpu->ReservedRegisterFieldFault();
+        }
+        uint64_t tmpVal = IgnoredFieldMask(Ia64Regs::MSR_TYPE, tmp_index, cpu->regs.gpr[format->m42.r2].val);
+        cpu->regs.msr.Write(tmp_index, tmpVal);
+    }
+}
+
 
 DECLINST(SysMemMgmt1Ext) {
     static HandleFn sysexttable1[16][4] = {
@@ -202,7 +230,7 @@ DECLINST(SysMemMgmt1Ext) {
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
-        { UnimplInstOpX3, MovFromMSR,     UnimplInstOpX3, UnimplInstOpX3 },
+        { MovToMSR,       MovFromMSR,     UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, MovFromCPUID,   UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
