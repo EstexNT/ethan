@@ -112,6 +112,19 @@ struct Ia64Format {
         } i15; // Deposit
         struct {
             uint64_t qp:6;
+            uint64_t p1:6;
+            uint64_t c:1;
+            uint64_t y:1;
+            uint64_t pos6b:6;
+            uint64_t r3:7;
+            uint64_t p2:6;
+            uint64_t ta:1;
+            uint64_t x2:2;
+            uint64_t tb:1;
+            uint64_t const5:4;
+        } i16; // Test Bit
+        struct {
+            uint64_t qp:6;
             uint64_t imm20a:20;
             uint64_t:1;
             uint64_t x6:6;
@@ -173,6 +186,15 @@ struct Ia64Format {
             uint64_t:1;
             uint64_t const1:4;
         } m29; // Move to AR
+        struct {
+            uint64_t qp:6;
+            uint64_t r1:7;
+            uint64_t:14;
+            uint64_t x6:6;
+            uint64_t x3:3;
+            uint64_t:1;
+            uint64_t const1:4;
+        } m36; // Move from PSR
         struct {
             uint64_t qp:6;
             uint64_t imm20a:20;

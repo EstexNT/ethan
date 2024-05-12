@@ -227,6 +227,19 @@ DECLINST(MovToMSR) {
         cpu->regs.msr.Write(tmp_index, tmpVal);
     }
 }
+DECLINST(MovFromPSR) {
+    printf("(qp %d) mov r%d = psr\n", format->m36.qp, format->m36.r1);
+    if (cpu->regs.pr[format->m36.qp].val) {
+        cpu->regs.CheckTargetRegister(format->m36.r1);
+        if (cpu->regs.psr.cpl != 0) {
+            cpu->PrivilegedOperationFault(0);
+        }
+        uint64_t tmpVal = ZeroExt(cpu->regs.psr.raw & 0xffffffff, 32);
+        tmpVal |= (((cpu->regs.psr.raw >> 35) & 0b11) << 35);
+        cpu->regs.gpr[format->m36.r1] = tmpVal;
+        cpu->regs.gpr[format->m36.r1] = false;
+    }
+}
 
 
 DECLINST(SysMemMgmt1Ext) {
@@ -236,7 +249,7 @@ DECLINST(SysMemMgmt1Ext) {
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
-        { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
+        { UnimplInstOpX3, UnimplInstOpX3, MovFromPSR,     UnimplInstOpX3 },
         { MovToMSR,       MovFromMSR,     UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, MovFromCPUID,   UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },

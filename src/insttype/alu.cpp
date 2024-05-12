@@ -93,6 +93,30 @@ DECLINST(CmpEqImm8) {
     }
 }
 
+DECLINST(CmpEqUncImm8) {
+    uint64_t imm = SignExt((format->a8.s << 7) | (format->a8.imm7b), 8);
+    printf("(qp %d) cmp.eq.unc p%d, p%d = %ld, r%d\n", format->a8.qp, format->a8.p1, format->a8.p2, imm, format->a8.r3);
+    if (cpu->regs.pr[format->a8.qp].val) {
+        if (format->a8.p1 == format->a8.p2) {
+            cpu->IllegalOperationFault();
+        }
+        bool tmp_rel = (imm == cpu->regs.gpr[format->a8.r3].val);
+        if (cpu->regs.gpr[format->a8.r3].nat) {
+            cpu->regs.pr[format->a8.p1] = 0;
+            cpu->regs.pr[format->a8.p2] = 0;
+        } else {
+            cpu->regs.pr[format->a8.p1] = tmp_rel;
+            cpu->regs.pr[format->a8.p2] = !tmp_rel;
+        }
+    } else {
+        if (format->a8.p1 == format->a8.p2) {
+            cpu->IllegalOperationFault();
+        }
+        cpu->regs.pr[format->a8.p1] = 0;
+        cpu->regs.pr[format->a8.p2] = 0;
+    }
+}
+
 DECLINST(Compare) {
     //                          [op][x2][tb][ta][c]
     static HandleFn comparetable[3][4][2][2][2] = {
@@ -131,7 +155,7 @@ DECLINST(Compare) {
         { { {UnimplInstCompare, UnimplInstCompare}, {UnimplInstCompare, UnimplInstCompare}, }, 
           { {UnimplInstCompare, UnimplInstCompare}, {UnimplInstCompare, UnimplInstCompare}, }, 
         }, // [2][2]xxx
-        { { {CmpEqImm8,         UnimplInstCompare}, {UnimplInstCompare, UnimplInstCompare}, }, 
+        { { {CmpEqImm8,         CmpEqUncImm8     }, {UnimplInstCompare, UnimplInstCompare}, }, 
           { {UnimplInstCompare, UnimplInstCompare}, {UnimplInstCompare, UnimplInstCompare}, }, 
         }, // [2][3]xxx
         { { {UnimplInstCompare, UnimplInstCompare}, {UnimplInstCompare, UnimplInstCompare}, }, 

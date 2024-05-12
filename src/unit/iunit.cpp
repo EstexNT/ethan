@@ -26,6 +26,10 @@ DECLINST(UnimplInstOp5) {
     fprintf(stderr, "unimpl iunit op=5 x=%d y=%d x2=%d\n", format->i11.x, format->i11.y, format->i11.x2);
     cpu->halt = true;
 }
+DECLINST(UnimplInstTbit) {
+    fprintf(stderr, "unimpl iunit testbit ta=%d tb=%d c=%d y=%d\n", format->i16.ta, format->i16.tb, format->i16.c, format->i16.y);
+    cpu->halt = true;
+}
 
 // op = 0 //
 
@@ -158,10 +162,46 @@ DECLINST(DepImm1) {
     }
 }
 
+
+DECLINST(TBitZ) {
+    printf("(qp %d) tbit.z p%d, p%d = r%d, %d\n", format->i16.qp, format->i16.p1, format->i16.p2, format->i16.r3, format->i16.pos6b);
+
+    if (cpu->regs.pr[format->i16.qp].val) {
+        if (format->i16.p1 == format->i16.p2) {
+            cpu->IllegalOperationFault();
+        }
+
+        bool tmp_rel = (cpu->regs.gpr[format->i16.r3].val & (1 << format->i16.pos6b)) == 0;
+        if (cpu->regs.gpr[format->i16.r3].nat) {
+            cpu->regs.pr[format->i16.p1] = 0;
+            cpu->regs.pr[format->i16.p2] = 0;
+        } else {
+            cpu->regs.pr[format->i16.p1] = tmp_rel;
+            cpu->regs.pr[format->i16.p2] = !tmp_rel;
+        }
+    }
+}
+
+DECLINST(TestBit) {
+    //                           [ta][tb][c][y]
+    static HandleFn testbithandle[2][2][2][2] = {
+        {
+        { {TBitZ,          UnimplInstTbit}, {UnimplInstTbit, UnimplInstTbit} },
+        { {UnimplInstTbit, UnimplInstTbit}, {UnimplInstTbit, UnimplInstTbit} },
+        },
+        {
+        { {UnimplInstTbit, UnimplInstTbit}, {UnimplInstTbit, UnimplInstTbit} },
+        { {UnimplInstTbit, UnimplInstTbit}, {UnimplInstTbit, UnimplInstTbit} },
+        },
+    };
+
+    testbithandle[format->i16.ta][format->i16.tb][format->i16.c][format->i16.y](format, cpu);
+}
+
 DECLINST(ShiftTestBit) {
     static HandleFn op5handle[2][2][4] = {
         {
-            {UnimplInstOp5, ExtrU,         UnimplInstOp5, UnimplInstOp5},
+            {TestBit,       ExtrU,         UnimplInstOp5, UnimplInstOp5},
             {UnimplInstOp5, UnimplInstOp5, UnimplInstOp5, UnimplInstOp5},
         },
         {
