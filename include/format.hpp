@@ -188,6 +188,26 @@ struct Ia64Format {
         } m29; // Move to AR
         struct {
             uint64_t qp:6;
+            uint64_t:7;
+            uint64_t r2:7;
+            uint64_t cr3:7;
+            uint64_t x6:6;
+            uint64_t x3:3;
+            uint64_t:1;
+            uint64_t const1:4;
+        } m32; // Move to CR
+        struct {
+            uint64_t qp:6;
+            uint64_t r1:7;
+            uint64_t:7;
+            uint64_t cr3:7;
+            uint64_t x6:6;
+            uint64_t x3:3;
+            uint64_t:1;
+            uint64_t const1:4;
+        } m33; // Move from CR
+        struct {
+            uint64_t qp:6;
             uint64_t r1:7;
             uint64_t:14;
             uint64_t x6:6;
@@ -225,6 +245,15 @@ struct Ia64Format {
             uint64_t:1;
             uint64_t const1:4;
         } m43; // Mv from Ind
+        struct {
+            uint64_t qp:6;
+            uint64_t imm21a:21;
+            uint64_t x4:4;
+            uint64_t i2d:2;
+            uint64_t x3:3;
+            uint64_t i:1;
+            uint64_t const0:4;
+        } m44; // Set/Reset Mask
 
 
         // B // 
@@ -250,6 +279,13 @@ struct Ia64Format {
             uint64_t s:1;
             uint64_t const5:4;
         } b3; // IP-Relative Call
+        struct {
+            uint64_t qp:6; // 0
+            uint64_t:21;
+            uint64_t x6:6;
+            uint64_t:4;
+            uint64_t const0:4;
+        } b8; // Misc
         struct {
             uint64_t qp:6;
             uint64_t imm20a:20;

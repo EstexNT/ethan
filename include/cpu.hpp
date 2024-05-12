@@ -220,6 +220,40 @@ EC = 66         # Epilog Count Register
         }
     } msr; // model-specific reg
 
+    struct Cr {
+        uint64_t val;
+        uint64_t operator=(uint64_t v) {
+            return (val = v);
+        }
+        enum Type {
+            DCR = 0,
+            ITM = 1,
+            IVA = 2,
+            PTA = 8,
+            IPSR = 16,
+            ISR = 17,
+            IIP = 19,
+            IFA = 20,
+            ITIR = 21,
+            IIPA = 22,
+            IFS = 23,
+            IIM = 24,
+            IHA = 25,
+            LID = 64,
+            IVR = 65,
+            TPR = 66,
+            EOI = 67,
+            IRR0 = 68,
+            IRR1 = 69,
+            IRR2 = 70,
+            IRR3 = 71,
+            ITV = 72,
+            PMV = 73,
+            LRR0 = 80,
+            LRR1 = 81,
+        };
+    } cr[128]; // control register
+
     uint64_t ip; // instruction pointer
 
     #pragma pack(push,1)
@@ -310,6 +344,8 @@ EC = 66         # Epilog Count Register
         AR_TYPE = 0,
         CPUID_TYPE = 1,
         MSR_TYPE = 2,
+        PSR_TYPE = 3,
+        CR_TYPE = 4,
     };
 
     Ia64Regs() {
@@ -333,6 +369,9 @@ EC = 66         # Epilog Count Register
         }
         for (int i = 0; i < NELEM(ar); i++) {
             ar[i] = 0;
+        }
+        for (int i = 0; i < NELEM(cr); i++) {
+            cr[i] = 0;
         }
         psr.raw = 0; // TODO: proper psr
         cpuid[0].val = MakeVendorInfo("Ethanium");
@@ -372,6 +411,12 @@ EC = 66         # Epilog Count Register
 
     bool IsReservedField(RegType type, uint64_t idx, uint64_t val) {
         switch (type) {
+            case PSR_TYPE:
+                if ((idx == 0) && // PSR_SM, 24 bits
+                    (val & 0b000000010001111111000001)) { 
+                    return true;
+                }
+                return false;
             case AR_TYPE:
                 if ((idx >= 8) && (idx <= 15)) {
                     return true;
@@ -434,6 +479,12 @@ public:
     void PreserveFrame(int a) {
         debugprintf("TODO: rse_preserve_frame(%d)\n", a);
     }
+    void RestoreFrame(int a, int b, int c) {
+        debugprintf("TODO: rse_restore_frame(%d, %d, %d)\n", a, b, c);
+    }
+    void EnableCurrentFrameLoad(void) {
+        debugprintf("TODO: rse_enable_current_frame_load()\n");
+    }
     uint64_t UpdateInternalStackPointers(uint64_t val) {
         debugprintf("TODO: rse_update_internal_stack_pointers(%ld)\n", val);
         return val;
@@ -463,10 +514,22 @@ public:
     bool halt;
     bool branched;
 
+    // stubs for now //
+    void CheckInterruptRequest(void) {
+        printf("TODO: check_interrupt_request()\n");
+    }
+    void EndOfInterrupt(void) {
+        printf("TODO: end_of_interrupt()\n");
+    }
+
     // checks //
 
     bool UnimplementedVirtualAddress(uint64_t vaddr) {
         // assume all and any virtual address is implemented (for now)
+        return false;
+    }
+    bool UnimplementedPhysicalAddress(uint64_t paddr) {
+        // assume all and any physical address is implemented (for now)
         return false;
     }
     // TODO: 

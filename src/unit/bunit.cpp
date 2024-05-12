@@ -29,6 +29,10 @@ DECLINST(UnimplInstOp4) {
     fprintf(stderr, "unimpl branch op=4 btype=%d\n", format->b1.btype);
     cpu->halt = true;
 }
+DECLINST(UnimplInstMisc) {
+    fprintf(stderr, "unimpl branch misc b30:27=%d x6=%d\n", format->b8.x6 & 0b1111, (format->b8.x6 & 0b110000) >> 4);
+    cpu->halt = true;
+}
 
 
 // op = 4 //
@@ -64,11 +68,77 @@ DECLINST(IPRelBrType) {
     op4handle[format->b1.btype](format, cpu);
 }
 
+
+// op = 0 //
+DECLINST(Rfi) {
+    printf("rfi\n");
+    uint64_t tmpIP = 0;
+    // if (!FollowedByStop()) {
+    //     cpu->IllegalOperationFault();  
+    // }
+    uint64_t unimplementedAddress = 0;
+    if (cpu->regs.psr.cpl != 0) {
+        cpu->PrivilegedOperationFault(0);
+    }
+    uint64_t takenRfi = 1;
+    cpu->regs.psr.raw = cpu->regs.cr[Ia64Regs::Cr::Type::IPSR].val;
+    if (cpu->regs.psr.is == 1) {
+        fprintf(stderr, "\n\nresume ia-32 instruction set\n\n");
+        cpu->halt = true;
+        return;
+    } else {
+        tmpIP = AlignIP(cpu->regs.cr[Ia64Regs::Cr::Type::IIP].val);
+        uint64_t slot = cpu->regs.psr.ri;
+        if ((cpu->regs.psr.it && cpu->UnimplementedVirtualAddress(tmpIP)) ||
+           (!cpu->regs.psr.it && cpu->UnimplementedPhysicalAddress(tmpIP))) {
+            unimplementedAddress = 1;
+        }
+        // cr[IFS].v
+        if ((cpu->regs.cr[Ia64Regs::Cr::Type::IFS].val >> 63) & 1) {
+            uint32_t tmpGrowth = -cpu->regs.cfm.sof;
+            cpu->alat.FrameUpdate(-(cpu->regs.cr[Ia64Regs::Cr::Type::IFS].val & 0b1111111), 0);
+            cpu->rse.RestoreFrame(cpu->regs.cr[Ia64Regs::Cr::Type::IFS].val & 0b1111111, tmpGrowth, cpu->regs.cfm.sof);
+            cpu->regs.cfm.raw = (cpu->regs.cr[Ia64Regs::Cr::Type::IFS].val & 0x1fffffffff);
+        }
+        cpu->rse.EnableCurrentFrameLoad();
+    }
+    cpu->regs.ip = tmpIP;
+    // cpu->InstructionSerialize();
+    if (unimplementedAddress) {
+        cpu->UnimplementedInstructionAddressTrap(0, tmpIP);
+    }
+}
+
+DECLINST(MiscIndirectBranch) {
+    static HandleFn miscbranchtable[16][4] = {
+        {UnimplInstMisc, UnimplInstMisc, UnimplInstMisc, UnimplInstMisc},
+        {UnimplInstMisc, UnimplInstMisc, UnimplInstMisc, UnimplInstMisc},
+        {UnimplInstMisc, UnimplInstMisc, UnimplInstMisc, UnimplInstMisc},
+        {UnimplInstMisc, UnimplInstMisc, UnimplInstMisc, UnimplInstMisc},
+        {UnimplInstMisc, UnimplInstMisc, UnimplInstMisc, UnimplInstMisc},
+        {UnimplInstMisc, UnimplInstMisc, UnimplInstMisc, UnimplInstMisc},
+        {UnimplInstMisc, UnimplInstMisc, UnimplInstMisc, UnimplInstMisc},
+        {UnimplInstMisc, UnimplInstMisc, UnimplInstMisc, UnimplInstMisc},
+        {Rfi,            UnimplInstMisc, UnimplInstMisc, UnimplInstMisc},
+        {UnimplInstMisc, UnimplInstMisc, UnimplInstMisc, UnimplInstMisc},
+        {UnimplInstMisc, UnimplInstMisc, UnimplInstMisc, UnimplInstMisc},
+        {UnimplInstMisc, UnimplInstMisc, UnimplInstMisc, UnimplInstMisc},
+        {UnimplInstMisc, UnimplInstMisc, UnimplInstMisc, UnimplInstMisc},
+        {UnimplInstMisc, UnimplInstMisc, UnimplInstMisc, UnimplInstMisc},
+        {UnimplInstMisc, UnimplInstMisc, UnimplInstMisc, UnimplInstMisc},
+        {UnimplInstMisc, UnimplInstMisc, UnimplInstMisc, UnimplInstMisc},
+    };
+
+    miscbranchtable[format->b8.x6 & 0b1111][(format->b8.x6 & 0b110000) >> 4](format, cpu);
+}
+
+
+
 // 4.5 page 324
 //                  [op]
 HandleFn handletable[8] = {
-    UnimplInst,  UnimplInst, UnimplInst, UnimplInst, 
-    IPRelBrType, UnimplInst, UnimplInst, UnimplInst,
+    MiscIndirectBranch,  UnimplInst, UnimplInst, UnimplInst, 
+    IPRelBrType,         UnimplInst, UnimplInst, UnimplInst,
 };
 
 

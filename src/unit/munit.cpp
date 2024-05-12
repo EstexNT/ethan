@@ -64,6 +64,12 @@ static inline bool IsReservedReg(Ia64Regs::RegType type, uint64_t ar, Ia64Cpu *c
     }
     return false;
 }
+static inline bool IsInterruptionCr(uint64_t cr) {
+    return ((cr >= 16) && (cr <= 25));
+}
+static inline uint64_t ImplItirCwiMask(uint64_t a) {
+    return a; // TODO
+}
 
 DECLINST(UnimplInst) {
     fprintf(stderr, "unimpl memory op=%d\n", format->common.op);
@@ -101,6 +107,40 @@ DECLINST(NopM) {
         // no operation
     }
 }
+DECLINST(Rsm) {
+    uint32_t imm24 = (format->m44.i << 23) | (format->m44.i2d << 21) | (format->m44.imm21a);
+    printf("(qp %d) rsm 0x%06x\n", format->m44.qp, imm24);
+    if (cpu->regs.pr[format->m44.qp].val) {
+        if (cpu->regs.psr.cpl != 0) {
+            cpu->PrivilegedOperationFault(0);
+        }
+        if (cpu->regs.IsReservedField(Ia64Regs::RegType::PSR_TYPE, 0, imm24)) {
+            cpu->ReservedRegisterFieldFault();
+        }
+
+        // TODO: there is a better way to do this
+        #define BLEH(bit) if (imm24 & bit) { \
+            cpu->regs.psr.raw = cpu->regs.psr.raw & ~bit; \
+        }
+
+        BLEH(0b10);
+        BLEH(0b100);
+        BLEH(0b1000);
+        BLEH(0b10000);
+        BLEH(0b100000);
+        BLEH(0b10000000000000);
+        BLEH(0b100000000000000);
+        BLEH(0b1000000000000000);
+        BLEH(0b100000000000000000);
+        BLEH(0b1000000000000000000);
+        BLEH(0b10000000000000000000);
+        BLEH(0b100000000000000000000);
+        BLEH(0b1000000000000000000000);
+        BLEH(0b10000000000000000000000);
+        BLEH(0b100000000000000000000000);
+#undef BLEH
+    }
+}
 
 DECLINST(SysMemMgmt0Ext) {
     //                         [x4][x2]
@@ -112,7 +152,7 @@ DECLINST(SysMemMgmt0Ext) {
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
-        { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
+        { Rsm,            Rsm,            Rsm,            Rsm            },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
@@ -240,6 +280,55 @@ DECLINST(MovFromPSR) {
         cpu->regs.gpr[format->m36.r1] = false;
     }
 }
+DECLINST(MovFromCR) {
+    printf("(qp %d) mov r%d = cr%d\n", format->m33.qp, format->m33.r1, format->m33.cr3);
+    if (cpu->regs.pr[format->m33.qp].val) {
+        if (IsReservedReg(Ia64Regs::RegType::CR_TYPE, format->m33.cr3, cpu) || 
+        cpu->regs.psr.ic && IsInterruptionCr(format->m33.cr3)) {
+            cpu->IllegalOperationFault();
+        }
+        cpu->regs.CheckTargetRegister(format->m33.r1);
+        if (cpu->regs.psr.cpl != 0) {
+            cpu->PrivilegedOperationFault(0);
+        }
+        if (format->m33.cr3 == Ia64Regs::Cr::Type::IVR) {
+            cpu->CheckInterruptRequest();
+        }
+        if (format->m33.cr3 == Ia64Regs::Cr::Type::ITIR) {
+            cpu->regs.gpr[format->m33.r1] = ImplItirCwiMask(cpu->regs.cr[format->m33.cr3].val);
+        } else {
+            cpu->regs.gpr[format->m33.r1] = cpu->regs.cr[format->m33.cr3].val;
+        }
+        cpu->regs.gpr[format->m33.r1] = false;
+    }
+}
+DECLINST(MovToCR) {
+    printf("(qp %d) mov cr%d = r%d\n", format->m32.qp, format->m32.cr3, format->m32.r2);
+    if (cpu->regs.pr[format->m32.qp].val) {
+        if (IsReservedReg(Ia64Regs::RegType::CR_TYPE, format->m32.cr3, cpu) || 
+        cpu->regs.IsReadOnlyRegister(Ia64Regs::RegType::CR_TYPE, format->m32.cr3) ||
+        cpu->regs.psr.ic && IsInterruptionCr(format->m32.cr3)) {
+            cpu->IllegalOperationFault();
+        }
+        if (cpu->regs.psr.cpl != 0) {
+            cpu->PrivilegedOperationFault(0);
+        }
+        if (cpu->regs.gpr[format->m32.r2].nat) {
+            cpu->RegisterNatConsumptionFault(0);
+        }
+        if (cpu->regs.IsReservedField(Ia64Regs::RegType::CR_TYPE, format->m32.cr3, cpu->regs.gpr[format->m32.r2].val)) {
+            cpu->ReservedRegisterFieldFault();
+        }
+        if (format->m32.cr3 == Ia64Regs::Cr::Type::EOI) {
+            cpu->EndOfInterrupt();
+        }
+        uint64_t tmpVal = IgnoredFieldMask(Ia64Regs::RegType::CR_TYPE, format->m32.cr3, cpu->regs.gpr[format->m32.r2].val);
+        cpu->regs.cr[format->m32.cr3] = tmpVal;
+        if (format->m32.cr3 == Ia64Regs::Cr::Type::IIPA) {
+            //last_IP = tmpVal;
+        }
+    }
+}
 
 
 DECLINST(SysMemMgmt1Ext) {
@@ -248,7 +337,7 @@ DECLINST(SysMemMgmt1Ext) {
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
-        { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
+        { UnimplInstOpX3, UnimplInstOpX3, MovFromCR,      UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, MovFromPSR,     UnimplInstOpX3 },
         { MovToMSR,       MovFromMSR,     UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, MovFromCPUID,   UnimplInstOpX3, UnimplInstOpX3 },
@@ -256,7 +345,7 @@ DECLINST(SysMemMgmt1Ext) {
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, MovMToAR,       UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
-        { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
+        { UnimplInstOpX3, UnimplInstOpX3, MovToCR,        UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
