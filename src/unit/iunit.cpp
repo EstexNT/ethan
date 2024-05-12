@@ -137,6 +137,27 @@ DECLINST(ExtrU) {
     }
 }
 
+DECLINST(DepImm1) {
+    uint64_t len4 = format->i14.len6d + 1;
+    uint64_t pos6 = 63 - format->i14.cpos6b;
+    uint64_t imm1 = SignExt(format->i14.s, 1);
+
+    printf("(qp %d) dep r%d = %ld, r%d, %ld, %ld\n", format->i14.qp, format->i14.r1, imm1, format->i14.r3, pos6, len4);
+    if (cpu->regs.pr[format->i14.qp].val) {
+        cpu->regs.CheckTargetRegister(format->i14.r1);
+
+        uint64_t tmpLen = len4;
+        if ((pos6 + tmpLen) > 64) {
+            tmpLen = 64 - pos6;
+        }
+        uint64_t mask = (1 << tmpLen) - 1;
+        cpu->regs.gpr[format->i14.r1] = ((imm1 & mask) << pos6) 
+                                      | ((cpu->regs.gpr[format->i14.r3].val & ~mask) << pos6);
+        cpu->regs.gpr[format->i14.r1] = cpu->regs.gpr[format->i14.r3].nat;
+    
+    }
+}
+
 DECLINST(ShiftTestBit) {
     static HandleFn op5handle[2][2][4] = {
         {
@@ -144,7 +165,7 @@ DECLINST(ShiftTestBit) {
             {UnimplInstOp5, UnimplInstOp5, UnimplInstOp5, UnimplInstOp5},
         },
         {
-            {UnimplInstOp5, UnimplInstOp5, UnimplInstOp5, UnimplInstOp5},
+            {UnimplInstOp5, UnimplInstOp5, UnimplInstOp5, DepImm1      },
             {UnimplInstOp5, UnimplInstOp5, UnimplInstOp5, UnimplInstOp5},
         },
         

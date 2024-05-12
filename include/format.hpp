@@ -33,6 +33,17 @@ struct Ia64Format {
             uint64_t qp:6;
             uint64_t r1:7;
             uint64_t imm7b:7;
+            uint64_t r3:7;
+            uint64_t imm6d:6;
+            uint64_t ve:1;
+            uint64_t x2a:2;
+            uint64_t s:1;
+            uint64_t const8:4;
+        } a4; // Add Imm14
+        struct {
+            uint64_t qp:6;
+            uint64_t r1:7;
+            uint64_t imm7b:7;
             uint64_t r3:2;
             uint64_t imm5c:5;
             uint64_t imm9d:9;
@@ -78,6 +89,18 @@ struct Ia64Format {
             uint64_t:1;
             uint64_t const5:5;
         } i11; // Extract
+        struct {
+            uint64_t qp:6;
+            uint64_t r1:7;
+            uint64_t:1;
+            uint64_t cpos6b:6;
+            uint64_t r3:7;
+            uint64_t len6d:6;
+            uint64_t x:1;
+            uint64_t x2:2;
+            uint64_t s:1;
+            uint64_t const5:4;
+        } i14; // Deposit Imm1
         struct {
             uint64_t qp:6;
             uint64_t r1:7;

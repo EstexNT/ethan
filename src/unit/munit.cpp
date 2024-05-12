@@ -80,6 +80,13 @@ DECLINST(UnimplInstOpX3) {
 
 
 // op = 0 //
+DECLINST(SrlzD) {
+    printf("(qp %d) srlz.d\n", format->m24.qp);
+    if (cpu->regs.pr[format->m24.qp].val) {
+        // TODO:
+        // cpu->DataSerialize();
+    }
+}
 DECLINST(SrlzI) {
     printf("(qp %d) srlz.i\n", format->m24.qp);
     if (cpu->regs.pr[format->m24.qp].val) {
@@ -98,7 +105,7 @@ DECLINST(NopM) {
 DECLINST(SysMemMgmt0Ext) {
     //                         [x4][x2]
     static HandleFn sysexttable[16][4] = {
-        { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
+        { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, SrlzD          },
         { NopM,           UnimplInstOpX3, UnimplInstOpX3, SrlzI          },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },

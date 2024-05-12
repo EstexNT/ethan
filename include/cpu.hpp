@@ -148,6 +148,9 @@ EC = 66         # Epilog Count Register
     } ar[128]; // application reg
 
     struct Msr {
+        #define DECMSR(off) \
+            uint64_t msr_##off = 0;
+        
         #define RD(off) \
             case off: \
                 return msr_##off;
@@ -159,15 +162,19 @@ EC = 66         # Epilog Count Register
 
             
         // TODO: maybe make an std::unordered_map
-        uint64_t msr_0x20 = 0;
-        uint64_t msr_0x42 = 0;
-        uint64_t msr_0xe3 = 0;
-        uint64_t msr_0x181 = 0;
-        uint64_t msr_0x1e8 = 0;
-        uint64_t msr_0x1e9 = 0;
-        uint64_t msr_0x5dd = 0;
-        uint64_t msr_0x600 = 0;
-        uint64_t msr_0x601 = 0;
+        DECMSR(0x20);
+        DECMSR(0x42);
+        DECMSR(0xe3);
+        DECMSR(0x181);
+        DECMSR(0x1e8);
+        DECMSR(0x1e9);
+        DECMSR(0x5dd);
+        DECMSR(0x600);
+        DECMSR(0x601);
+        DECMSR(0x602);
+        DECMSR(0x60d);
+        DECMSR(0x60e);
+        DECMSR(0x615);
 
         uint64_t Read(uint64_t index) {
             switch (index) {
@@ -178,7 +185,12 @@ EC = 66         # Epilog Count Register
                 RD(0x1e8);
                 RD(0x1e9);
                 RD(0x5dd);
+                RD(0x600);
                 RD(0x601);
+                RD(0x602);
+                RD(0x60d);
+                RD(0x60e);
+                RD(0x615);
                 default:
                     fprintf(stderr, "unimplemented read msr 0x%lx\n", index);
                     exit(1);
@@ -194,7 +206,12 @@ EC = 66         # Epilog Count Register
                 WR(0x1e8);
                 WR(0x1e9);
                 WR(0x5dd);
+                WR(0x600);
                 WR(0x601);
+                WR(0x602);
+                WR(0x60d);
+                WR(0x60e);
+                WR(0x615);
                 default:
                     fprintf(stderr, "unimplemented write msr 0x%lx\n", index);
                     exit(1);

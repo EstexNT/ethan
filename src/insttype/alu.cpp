@@ -9,7 +9,34 @@ DECLINST(UnimplInst) {
 }
 DECLINST(UnimplInstCompare) {
     fprintf(stderr, "unimpl alu compare op=%d, x2=%d, tb=%d, ta=%d, c=%d\n", format->common.op, format->a6.x2, format->a6.tb, format->a6.ta, format->a6.c);
+    cpu->halt = true;
 }
+DECLINST(UnimplInstALUMM) {
+    fprintf(stderr, "unimpl alu alu/mm op=%d, ve=%d, x2a=%d\n", format->common.op, format->a1.ve, format->a1.x2a);
+    cpu->halt = true;
+}
+
+// op = 8 //
+DECLINST(AddsImm14) {
+    uint32_t imm14 = SignExt((format->a4.s << 13) | (format->a4.imm6d << 7) | (format->a4.imm7b), 14);
+    printf("(qp %d) add r%d = 0x%08x, r%d\n", format->a4.qp, format->a4.r1, imm14, format->a4.r3);
+    if (cpu->regs.pr[format->a4.qp].val) {
+        cpu->regs.CheckTargetRegister(format->a4.r1);
+        uint64_t tmpSrc = SignExt(imm14, 14);
+        cpu->regs.gpr[format->a4.r1] = tmpSrc + cpu->regs.gpr[format->a4.r3].val;
+        cpu->regs.gpr[format->a4.r1] = cpu->regs.gpr[format->a4.r3].nat;
+    }
+}
+
+DECLINST(ALUMMALU) {
+    static HandleFn alummtable[2][4] = {
+        {UnimplInstALUMM, UnimplInstALUMM, AddsImm14,       UnimplInstALUMM},
+        {UnimplInstALUMM, UnimplInstALUMM, UnimplInstALUMM, UnimplInstALUMM},
+        
+    };
+    alummtable[format->a1.ve][format->a1.x2a](format, cpu);
+}
+
 
 // op = 9 //
 DECLINST(AddImm22) {
@@ -118,7 +145,7 @@ DECLINST(Compare) {
 // 4.2 page 272
 //                  [op]
 HandleFn handletable[8] = {
-    UnimplInst, AddImm22,   UnimplInst, UnimplInst,
+    ALUMMALU,   AddImm22,   UnimplInst, UnimplInst,
     Compare,    Compare,    Compare,    UnimplInst,
 };
 
