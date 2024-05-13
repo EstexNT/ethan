@@ -116,6 +116,22 @@ DECLINST(CmpEqUncImm8) {
         cpu->regs.pr[format->a8.p2] = 0;
     }
 }
+DECLINST(CmpEq) {
+    printf("(qp %d) cmp.eq p%d, p%d = r%d, r%d\n", format->a6.qp, format->a6.p1, format->a6.p2, format->a6.r2, format->a6.r3);
+    if (cpu->regs.pr[format->a6.qp].val) {
+        if (format->a6.p1 == format->a6.p2) {
+            cpu->IllegalOperationFault();
+        }
+        bool tmpRel = (cpu->regs.gpr[format->a6.r2].val == cpu->regs.gpr[format->a6.r3].val);
+        if (cpu->regs.gpr[format->a6.r3].nat || cpu->regs.gpr[format->a6.r2].nat ) {
+            cpu->regs.pr[format->a6.p1] = 0;
+            cpu->regs.pr[format->a6.p2] = 0;
+        } else {
+            cpu->regs.pr[format->a6.p1] = tmpRel;
+            cpu->regs.pr[format->a6.p2] = !tmpRel;
+        }
+    }
+}
 
 DECLINST(Compare) {
     //                          [op][x2][tb][ta][c]
@@ -149,7 +165,7 @@ DECLINST(Compare) {
         },
         },
         { // [2][0]xxx
-        { { {UnimplInstCompare, UnimplInstCompare}, {UnimplInstCompare, UnimplInstCompare}, }, 
+        { { {CmpEq,             UnimplInstCompare}, {UnimplInstCompare, UnimplInstCompare}, }, 
           { {UnimplInstCompare, UnimplInstCompare}, {UnimplInstCompare, UnimplInstCompare}, }, 
         }, // [2][1]xxx
         { { {UnimplInstCompare, UnimplInstCompare}, {UnimplInstCompare, UnimplInstCompare}, }, 

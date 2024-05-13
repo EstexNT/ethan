@@ -103,6 +103,7 @@ DECLINST(Rfi) {
         cpu->rse.EnableCurrentFrameLoad();
     }
     cpu->regs.ip = tmpIP;
+    cpu->branched = true;
     // cpu->InstructionSerialize();
     if (unimplementedAddress) {
         cpu->UnimplementedInstructionAddressTrap(0, tmpIP);

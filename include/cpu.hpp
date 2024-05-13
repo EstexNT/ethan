@@ -174,6 +174,7 @@ EC = 66         # Epilog Count Register
         DECMSR(0x602);
         DECMSR(0x60d);
         DECMSR(0x60e);
+        DECMSR(0x612);
         DECMSR(0x615);
 
         uint64_t Read(uint64_t index) {
@@ -190,6 +191,7 @@ EC = 66         # Epilog Count Register
                 RD(0x602);
                 RD(0x60d);
                 RD(0x60e);
+                RD(0x612);
                 RD(0x615);
                 default:
                     fprintf(stderr, "unimplemented read msr 0x%lx\n", index);
@@ -211,6 +213,7 @@ EC = 66         # Epilog Count Register
                 WR(0x602);
                 WR(0x60d);
                 WR(0x60e);
+                WR(0x612);
                 WR(0x615);
                 default:
                     fprintf(stderr, "unimplemented write msr 0x%lx\n", index);
@@ -346,6 +349,7 @@ EC = 66         # Epilog Count Register
         MSR_TYPE = 2,
         PSR_TYPE = 3,
         CR_TYPE = 4,
+        AR_I_TYPE = 5,
     };
 
     Ia64Regs() {
@@ -454,6 +458,68 @@ EC = 66         # Epilog Count Register
                 return false;
         }
         return false;
+    }
+    bool IsReservedReg(Ia64Regs::RegType type, uint64_t ar) {
+        switch (type) {
+            case Ia64Regs::CPUID_TYPE:
+                if (ar >= (cpuid[3].val & 0xff)) {
+                    return true;
+                }
+                return false;
+
+            case Ia64Regs::AR_TYPE:
+                if ((ar >= 8) && (ar <= 15)) {
+                    return true;
+                }
+                if (ar == 20) {
+                    return true;
+                }
+                if ((ar == 22) || (ar == 23)) {
+                    return true;
+                }
+                if (ar == 31) {
+                    return true;
+                }
+                if ((ar == 33) || (ar == 34) || (ar == 35)) {
+                    return true;
+                }
+                if ((ar == 37) || (ar == 38) || (ar == 39)) {
+                    return true;
+                }
+                if ((ar == 41) || (ar == 42) || (ar == 43)) {
+                    return true;
+                }
+                if ((ar == 45) || (ar == 46) || (ar == 47)) {
+                    return true;
+                }
+                if ((ar >= 67) && (ar <= 111)) {
+                    return true;
+                }
+                break;
+
+            case Ia64Regs::MSR_TYPE:
+                return false;
+            
+            default:
+                debugprintf("TODO: is_reserved_reg(%d, %lx)\n", (int)type, ar);
+                return false;
+        }
+        return false;
+    }
+    uint64_t IgnoredFieldMask(Ia64Regs::RegType type, uint64_t idx, uint64_t val) {
+        switch (type) {
+            case Ia64Regs::AR_TYPE:
+                if ((idx >= 0) && (idx <= 7)) {
+                    // kernel registers. no ignored fields
+                    return val;
+                }
+                break;
+            case Ia64Regs::MSR_TYPE:
+                // probably has no ignored fields
+                return val;
+        }
+        debugprintf("TODO: ignored_field_mask(%d, %ld, %ld)\n", (int)type, idx, val);
+        return val;
     }
     // TODO: move those fellas into Ia64Regs::Ar
     bool IsKernelReg(uint64_t idx) {

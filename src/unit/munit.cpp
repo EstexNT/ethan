@@ -1,69 +1,6 @@
 #include "munit.hpp"
 
 namespace MUnit {
-
-static inline uint64_t IgnoredFieldMask(Ia64Regs::RegType type, uint64_t idx, uint64_t val) {
-    switch (type) {
-        case Ia64Regs::AR_TYPE:
-            if ((idx >= 0) && (idx <= 7)) {
-                // kernel registers. no ignored fields
-                return val;
-            }
-            break;
-        case Ia64Regs::MSR_TYPE:
-            // probably has no ignored fields
-            return val;
-    }
-    debugprintf("TODO: ignored_field_mask(%d, %ld, %ld)\n", (int)type, idx, val);
-    return val;
-}
-static inline bool IsReservedReg(Ia64Regs::RegType type, uint64_t ar, Ia64Cpu *cpu) {
-    switch (type) {
-        case Ia64Regs::CPUID_TYPE:
-            if (ar >= (cpu->regs.cpuid[3].val & 0xff)) {
-                return true;
-            }
-            return false;
-
-        case Ia64Regs::AR_TYPE:
-            if ((ar >= 8) && (ar <= 15)) {
-                return true;
-            }
-            if (ar == 20) {
-                return true;
-            }
-            if ((ar == 22) || (ar == 23)) {
-                return true;
-            }
-            if (ar == 31) {
-                return true;
-            }
-            if ((ar == 33) || (ar == 34) || (ar == 35)) {
-                return true;
-            }
-            if ((ar == 37) || (ar == 38) || (ar == 39)) {
-                return true;
-            }
-            if ((ar == 41) || (ar == 42) || (ar == 43)) {
-                return true;
-            }
-            if ((ar == 45) || (ar == 46) || (ar == 47)) {
-                return true;
-            }
-            if ((ar >= 67) && (ar <= 111)) {
-                return true;
-            }
-            break;
-
-        case Ia64Regs::MSR_TYPE:
-            return false;
-        
-        default:
-            debugprintf("TODO: is_reserved_reg(%d, %lx)\n", (int)type, ar);
-            return false;
-    }
-    return false;
-}
 static inline bool IsInterruptionCr(uint64_t cr) {
     return ((cr >= 16) && (cr <= 25));
 }
@@ -184,7 +121,7 @@ DECLINST(MovFromCPUID) {
         if (cpu->regs.gpr[format->m43.r1].nat) {
             cpu->RegisterNatConsumptionFault(0);
         }
-        if (IsReservedReg(Ia64Regs::CPUID_TYPE, tmp_index, cpu)) {
+        if (cpu->regs.IsReservedReg(Ia64Regs::CPUID_TYPE, tmp_index)) {
             cpu->ReservedRegisterFieldFault();
         }
         cpu->regs.gpr[format->m43.r1] = cpu->regs.cpuid[tmp_index].val;
@@ -195,7 +132,7 @@ DECLINST(MovFromCPUID) {
 DECLINST(MovMToAR) {
     printf("(qp %d) mov.m ar%d = r%d\n", format->m29.qp, format->m29.ar3, format->m29.r2);
     if (cpu->regs.pr[format->m29.qp].val) {
-        if (IsReservedReg(Ia64Regs::AR_TYPE, format->m29.ar3, cpu)) {
+        if (cpu->regs.IsReservedReg(Ia64Regs::AR_TYPE, format->m29.ar3)) {
             cpu->IllegalOperationFault();
         }
         uint64_t tmp_val = cpu->regs.gpr[format->m29.r2].val;
@@ -215,7 +152,7 @@ DECLINST(MovMToAR) {
             cpu->PrivilegedRegisterFault();
         }
         if (!cpu->regs.IsIgnoredReg(format->m29.ar3)) {
-            tmp_val = IgnoredFieldMask(Ia64Regs::AR_TYPE, format->m29.ar3, tmp_val);
+            tmp_val = cpu->regs.IgnoredFieldMask(Ia64Regs::AR_TYPE, format->m29.ar3, tmp_val);
             if (format->m29.ar3 == Ia64Regs::Ar::Type::RSC && ((tmp_val >> 2) & 3) < cpu->regs.psr.cpl) {
                 tmp_val |= (cpu->regs.psr.cpl << 2) & 3;
             }
@@ -241,7 +178,7 @@ DECLINST(MovFromMSR) {
         if (cpu->regs.gpr[format->m43.r1].nat) {
             cpu->RegisterNatConsumptionFault(0);
         }
-        if (IsReservedReg(Ia64Regs::MSR_TYPE, tmp_index, cpu)) {
+        if (cpu->regs.IsReservedReg(Ia64Regs::MSR_TYPE, tmp_index)) {
             cpu->ReservedRegisterFieldFault();
         }
         cpu->regs.gpr[format->m43.r1] = cpu->regs.msr.Read(tmp_index);
@@ -259,11 +196,11 @@ DECLINST(MovToMSR) {
         if (cpu->regs.gpr[format->m42.r2].nat || cpu->regs.gpr[format->m42.r3].nat) {
             cpu->RegisterNatConsumptionFault(0);
         }
-        if (IsReservedReg(Ia64Regs::MSR_TYPE, tmp_index, cpu) || 
+        if (cpu->regs.IsReservedReg(Ia64Regs::MSR_TYPE, tmp_index) || 
         cpu->regs.IsReservedField(Ia64Regs::MSR_TYPE, tmp_index, cpu->regs.gpr[format->m42.r2].val)) {
             cpu->ReservedRegisterFieldFault();
         }
-        uint64_t tmpVal = IgnoredFieldMask(Ia64Regs::MSR_TYPE, tmp_index, cpu->regs.gpr[format->m42.r2].val);
+        uint64_t tmpVal = cpu->regs.IgnoredFieldMask(Ia64Regs::MSR_TYPE, tmp_index, cpu->regs.gpr[format->m42.r2].val);
         cpu->regs.msr.Write(tmp_index, tmpVal);
     }
 }
@@ -283,7 +220,7 @@ DECLINST(MovFromPSR) {
 DECLINST(MovFromCR) {
     printf("(qp %d) mov r%d = cr%d\n", format->m33.qp, format->m33.r1, format->m33.cr3);
     if (cpu->regs.pr[format->m33.qp].val) {
-        if (IsReservedReg(Ia64Regs::RegType::CR_TYPE, format->m33.cr3, cpu) || 
+        if (cpu->regs.IsReservedReg(Ia64Regs::RegType::CR_TYPE, format->m33.cr3) || 
         cpu->regs.psr.ic && IsInterruptionCr(format->m33.cr3)) {
             cpu->IllegalOperationFault();
         }
@@ -305,7 +242,7 @@ DECLINST(MovFromCR) {
 DECLINST(MovToCR) {
     printf("(qp %d) mov cr%d = r%d\n", format->m32.qp, format->m32.cr3, format->m32.r2);
     if (cpu->regs.pr[format->m32.qp].val) {
-        if (IsReservedReg(Ia64Regs::RegType::CR_TYPE, format->m32.cr3, cpu) || 
+        if (cpu->regs.IsReservedReg(Ia64Regs::RegType::CR_TYPE, format->m32.cr3) || 
         cpu->regs.IsReadOnlyRegister(Ia64Regs::RegType::CR_TYPE, format->m32.cr3) ||
         cpu->regs.psr.ic && IsInterruptionCr(format->m32.cr3)) {
             cpu->IllegalOperationFault();
@@ -322,7 +259,7 @@ DECLINST(MovToCR) {
         if (format->m32.cr3 == Ia64Regs::Cr::Type::EOI) {
             cpu->EndOfInterrupt();
         }
-        uint64_t tmpVal = IgnoredFieldMask(Ia64Regs::RegType::CR_TYPE, format->m32.cr3, cpu->regs.gpr[format->m32.r2].val);
+        uint64_t tmpVal = cpu->regs.IgnoredFieldMask(Ia64Regs::RegType::CR_TYPE, format->m32.cr3, cpu->regs.gpr[format->m32.r2].val);
         cpu->regs.cr[format->m32.cr3] = tmpVal;
         if (format->m32.cr3 == Ia64Regs::Cr::Type::IIPA) {
             //last_IP = tmpVal;

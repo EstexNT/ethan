@@ -164,6 +164,26 @@ struct Ia64Format {
             uint64_t:1;
             uint64_t const0:4;
         } i25; // Move from Pred/IP
+        struct {
+            uint64_t qp:6;
+            uint64_t:7;
+            uint64_t imm7b:7;
+            uint64_t ar3:7;
+            uint64_t x6:6;
+            uint64_t x3:3;
+            uint64_t s:1;
+            uint64_t const0:4;
+        } i27; // Move to AR Imm8
+        struct {
+            uint64_t qp:6;
+            uint64_t r1:7;
+            uint64_t:7;
+            uint64_t ar3:7;
+            uint64_t x6:6;
+            uint64_t x3:3;
+            uint64_t:1;
+            uint64_t const0:4;
+        } i28; // Move from AR
 
 
         // M //

@@ -67,6 +67,14 @@ void Ia64Cpu::Dump(void) {
         outlog << "CPUID" << TODEC << i;
         outlog << " = 0x" << TOHEX16 << regs.cpuid[i].val << ", ";
     }
+    outlog << "\n\t\tCR:\n\t\t  ";
+    for (int i = 0; i < NELEM(regs.cr); i++) {
+        outlog << "CR" << TODEC << i;
+        outlog << " = 0x" << TOHEX16 << regs.cr[i].val << ", ";
+        if ((i % 7) == 0) {
+            outlog << "\n\t\t  ";
+        }
+    }
     outlog << "\n";
     outlog << "\n=== CPU DUMP END ===\n";
 
@@ -89,6 +97,13 @@ void Ia64Cpu::run(void) {
             }
             return;
         }
+
+        // TODO: unhardcode
+        if (regs.ip == 0xffff7e50) {
+            // get out of an infinite loop waiting for.. something
+            regs.msr.Write(0x612, regs.msr.Read(0x612) | 0b1000000);
+        }
+        
         Memory::ReadAt<Ia64Bundle>(&bundle, regs.ip);
         printf("%lx:\n", regs.ip);
         debugprintf("bundle: %016" PRIx64 " %016" PRIx64 "\n", bundle.raw[1], bundle.raw[0]);

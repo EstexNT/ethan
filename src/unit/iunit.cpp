@@ -57,11 +57,60 @@ DECLINST(MovFromB) {
         cpu->regs.gpr[format->i22.r1] = false;
     }
 }
+DECLINST(MoviFromAr) {
+    printf("(qp %d) mov.i r%d = ar%d\n", format->i28.qp, format->i28.r1, format->i28.ar3);
+    if (cpu->regs.pr[format->i28.qp].val) {
+        if (cpu->regs.IsReservedReg(Ia64Regs::AR_I_TYPE, format->i28.ar3)) {
+            cpu->IllegalOperationFault();
+        }
+        cpu->regs.CheckTargetRegister(format->i28.r1);
+        if (((format->i28.ar3 == Ia64Regs::Ar::BSPSTORE) || (format->i28.ar3 == Ia64Regs::Ar::RNAT)) && ((cpu->regs.ar[Ia64Regs::Ar::RSC].val & 0b11) != 0)) {
+            cpu->IllegalOperationFault();
+        }
+        if (format->i28.ar3 == Ia64Regs::Ar::ITC && cpu->regs.psr.si && cpu->regs.psr.cpl != 0) {
+            cpu->PrivilegedRegisterFault();
+        }
+        cpu->regs.gpr[format->i28.r1] = (cpu->regs.IsIgnoredReg(format->i28.ar3)) ? 0 : cpu->regs.ar[format->i28.ar3].val;
+        cpu->regs.gpr[format->i28.r1] = false;
+    }
+}
+DECLINST(MoviToArImm8) {
+    uint8_t imm8 = (format->i27.s << 7)| (format->i27.imm7b);
+    printf("(qp %d) mov.i ar%d = 0x%02x\n", format->i27.qp, format->i27.ar3, imm8);
+    if (cpu->regs.pr[format->i27.qp].val) {
+        if (cpu->regs.IsReservedReg(Ia64Regs::AR_I_TYPE, format->i27.ar3)) {
+            cpu->IllegalOperationFault();
+        }
+        uint64_t tmpVal = SignExt(imm8, 8);
+        if (cpu->regs.IsReadOnlyRegister(Ia64Regs::AR_TYPE, format->i27.ar3) || 
+            ((format->i28.ar3 == Ia64Regs::Ar::BSPSTORE) || (format->i28.ar3 == Ia64Regs::Ar::RNAT)) && ((cpu->regs.ar[Ia64Regs::Ar::RSC].val & 0b11) != 0)) {
+            cpu->IllegalOperationFault();
+        }
+        if (cpu->regs.IsReservedField(Ia64Regs::AR_TYPE, format->i27.ar3, tmpVal)) {
+            cpu->ReservedRegisterFieldFault();
+        }
+        if ((cpu->regs.IsKernelReg(format->i27.ar3) || (format->i27.ar3 == Ia64Regs::Ar::ITC)) && (cpu->regs.psr.cpl != 0)) {
+            cpu->PrivilegedRegisterFault();
+        }
+        if (!cpu->regs.IsIgnoredReg(format->i27.ar3)) {
+            tmpVal = cpu->regs.IgnoredFieldMask(Ia64Regs::AR_TYPE, format->i27.ar3, tmpVal);
+            if (format->i27.ar3 == Ia64Regs::Ar::RSC && (((tmpVal >> 2) & 0b11) < cpu->regs.psr.cpl)) {
+                tmpVal = (tmpVal & ~(0b11 << 2)) | (cpu->regs.psr.cpl << 2);
+            }
+            cpu->regs.ar[format->i27.ar3] = tmpVal;
+            if (format->i27.ar3 == Ia64Regs::Ar::BSPSTORE) {
+                cpu->regs.ar[Ia64Regs::Ar::BSP] = cpu->rse.UpdateInternalStackPointers(tmpVal);
+                cpu->regs.ar[Ia64Regs::Ar::RNAT] = 0; // undefined()
+            }
+        }
+    }
+}
 
 DECLINST(MiscExt) {
     static HandleFn miscexthandle[16][4] = {
-        { UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30, MovFromIP },
-        { NopI,             UnimplInstOp0X30, UnimplInstOp0X30, MovFromB  },
+        { UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30, MovFromIP        },
+        { NopI,             UnimplInstOp0X30, UnimplInstOp0X30, MovFromB         },
+        { UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30, MoviFromAr       },
         { UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30 },
         { UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30 },
         { UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30 },
@@ -69,8 +118,7 @@ DECLINST(MiscExt) {
         { UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30 },
         { UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30 },
         { UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30 },
-        { UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30 },
-        { UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30 },
+        { MoviToArImm8,     UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30 },
         { UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30 },
         { UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30 },
         { UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30 },
