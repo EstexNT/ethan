@@ -58,11 +58,34 @@ DECLINST(BrCond) {
         }
     }
 }
+DECLINST(BrCloop) {
+    uint64_t tempIP = AlignIP(cpu->regs.ip + SignExt(((format->b2.s << 20) | format->b2.imm20b) << 4, 25));
+    
+    printf("(qp %d) br.cloop%s%s%s 0x%lx\n", format->b2.qp, 
+        GetBranchWhetherHintCompleterStr(format->b2.wh),
+        GetSequentialPrefetchHintCompleterStr(format->b2.p),
+        GetBranchCacheDeallocHintCompleterStr(format->b2.d),
+        tempIP
+        );
+    cpu->regs.ar[Ia64Regs::Ar::LC].val--;
+    if (cpu->regs.ar[Ia64Regs::Ar::LC].val != 0) {
+        cpu->branched = true;
+        cpu->regs.ip = tempIP;
+        if ((cpu->regs.psr.it && cpu->UnimplementedVirtualAddress(tempIP)) ||
+            (!cpu->regs.psr.it && cpu->UnimplementedVirtualAddress(tempIP))) {
+            cpu->UnimplementedInstructionAddressTrap(0, tempIP);
+        }
+        if (cpu->regs.psr.tb) {
+            cpu->TakenBranchTrap();
+        }
+
+    }
+}
 
 DECLINST(IPRelBrType) {
     static HandleFn op4handle[8] = {
         BrCond,        UnimplInstOp4, UnimplInstOp4, UnimplInstOp4,
-        UnimplInstOp4, UnimplInstOp4, UnimplInstOp4, UnimplInstOp4,
+        UnimplInstOp4, BrCloop,       UnimplInstOp4, UnimplInstOp4,
     };
 
     op4handle[format->b1.btype](format, cpu);

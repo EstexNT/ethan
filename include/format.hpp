@@ -167,6 +167,16 @@ struct Ia64Format {
         struct {
             uint64_t qp:6;
             uint64_t:7;
+            uint64_t r2:7;
+            uint64_t ar3:7;
+            uint64_t x6:6;
+            uint64_t x3:3;
+            uint64_t:1;
+            uint64_t const0:4;
+        } i26; // Move to AR
+        struct {
+            uint64_t qp:6;
+            uint64_t:7;
             uint64_t imm7b:7;
             uint64_t ar3:7;
             uint64_t x6:6;
@@ -288,6 +298,17 @@ struct Ia64Format {
             uint64_t s:1;
             uint64_t const4:4;
         } b1; // IP-Relative Branch
+        struct {
+            uint64_t qp:6;
+            uint64_t btype:3;
+            uint64_t:3;
+            uint64_t p:1;
+            uint64_t imm20b:20;
+            uint64_t wh:2;
+            uint64_t d:1;
+            uint64_t s:1;
+            uint64_t const4:4;
+        } b2; // Counted Branch
         struct {
             uint64_t qp:6;
             uint64_t b1:3;

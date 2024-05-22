@@ -83,7 +83,7 @@ DECLINST(MoviToArImm8) {
         }
         uint64_t tmpVal = SignExt(imm8, 8);
         if (cpu->regs.IsReadOnlyRegister(Ia64Regs::AR_TYPE, format->i27.ar3) || 
-            ((format->i28.ar3 == Ia64Regs::Ar::BSPSTORE) || (format->i28.ar3 == Ia64Regs::Ar::RNAT)) && ((cpu->regs.ar[Ia64Regs::Ar::RSC].val & 0b11) != 0)) {
+            ((format->i27.ar3 == Ia64Regs::Ar::BSPSTORE) || (format->i27.ar3 == Ia64Regs::Ar::RNAT)) && ((cpu->regs.ar[Ia64Regs::Ar::RSC].val & 0b11) != 0)) {
             cpu->IllegalOperationFault();
         }
         if (cpu->regs.IsReservedField(Ia64Regs::AR_TYPE, format->i27.ar3, tmpVal)) {
@@ -105,6 +105,39 @@ DECLINST(MoviToArImm8) {
         }
     }
 }
+DECLINST(MoviToAr) {
+    printf("(qp %d) mov.i ar%d = r%d\n", format->i26.qp, format->i26.ar3, format->i26.r2);
+    if (cpu->regs.pr[format->i26.qp].val) {
+        if (cpu->regs.IsReservedReg(Ia64Regs::AR_I_TYPE, format->i26.ar3)) {
+            cpu->IllegalOperationFault();
+        }
+        uint64_t tmpVal = cpu->regs.gpr[format->i26.r2].val;
+        if (cpu->regs.IsReadOnlyRegister(Ia64Regs::AR_TYPE, format->i26.ar3) || 
+            ((format->i26.ar3 == Ia64Regs::Ar::BSPSTORE) || (format->i26.ar3 == Ia64Regs::Ar::RNAT)) && ((cpu->regs.ar[Ia64Regs::Ar::RSC].val & 0b11) != 0)) {
+            cpu->IllegalOperationFault();
+        }
+        if (cpu->regs.gpr[format->i26.r2].nat) {
+            cpu->RegisterNatConsumptionFault(0);
+        }
+        if (cpu->regs.IsReservedField(Ia64Regs::AR_TYPE, format->i26.ar3, tmpVal)) {
+            cpu->ReservedRegisterFieldFault();
+        }
+        if ((cpu->regs.IsKernelReg(format->i26.ar3) || (format->i26.ar3 == Ia64Regs::Ar::ITC)) && (cpu->regs.psr.cpl != 0)) {
+            cpu->PrivilegedRegisterFault();
+        }
+        if (!cpu->regs.IsIgnoredReg(format->i26.ar3)) {
+            tmpVal = cpu->regs.IgnoredFieldMask(Ia64Regs::AR_TYPE, format->i26.ar3, tmpVal);
+            if (format->i26.ar3 == Ia64Regs::Ar::RSC && (((tmpVal >> 2) & 0b11) < cpu->regs.psr.cpl)) {
+                tmpVal = (tmpVal & ~(0b11 << 2)) | (cpu->regs.psr.cpl << 2);
+            }
+            cpu->regs.ar[format->i26.ar3] = tmpVal;
+            if (format->i26.ar3 == Ia64Regs::Ar::BSPSTORE) {
+                cpu->regs.ar[Ia64Regs::Ar::BSP] = cpu->rse.UpdateInternalStackPointers(tmpVal);
+                cpu->regs.ar[Ia64Regs::Ar::RNAT] = 0; // undefined()
+            }
+        }
+    }
+}
 
 DECLINST(MiscExt) {
     static HandleFn miscexthandle[16][4] = {
@@ -118,7 +151,7 @@ DECLINST(MiscExt) {
         { UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30 },
         { UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30 },
         { UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30 },
-        { MoviToArImm8,     UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30 },
+        { MoviToArImm8,     UnimplInstOp0X30, MoviToAr,         UnimplInstOp0X30 },
         { UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30 },
         { UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30 },
         { UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30, UnimplInstOp0X30 },
