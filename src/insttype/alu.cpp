@@ -15,10 +15,46 @@ DECLINST(UnimplInstALUMM) {
     fprintf(stderr, "unimpl alu alu/mm op=%d, ve=%d, x2a=%d\n", format->common.op, format->a1.ve, format->a1.x2a);
     cpu->halt = true;
 }
+DECLINST(UnimplInstALUExt) {
+    fprintf(stderr, "unimpl alu intext x4=%d, x2b=%d\n", format->a1.x4, format->a1.x2b);
+    cpu->halt = true;
+}
 
 
 
 // op = 8 //
+DECLINST(SubtractM1) {
+    printf("(qp %d) sub r%d = r%d, r%d, 1\n", format->a1.qp, format->a1.r1, format->a1.r2, format->a1.r3);
+    if (ISQP(a1)) {
+        cpu->regs.CheckTargetRegister(format->a1.r1);
+
+        cpu->regs.gpr[format->a1.r1] = cpu->regs.gpr[format->a1.r2].val - cpu->regs.gpr[format->a1.r3].val - 1;
+        cpu->regs.gpr[format->a1.r1] = cpu->regs.gpr[format->a1.r2].nat || cpu->regs.gpr[format->a1.r3].nat;
+    }
+}
+DECLINST(IntALUExt) {
+    static HandleFn intaluexttable[16][4] = {
+        {UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt},
+        {SubtractM1,       UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt},
+        {UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt},
+        {UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt},
+        {UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt},
+        {UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt},
+        {UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt},
+        {UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt},
+        {UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt},
+        {UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt},
+        {UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt},
+        {UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt},
+        {UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt},
+        {UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt},
+        {UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt},
+        {UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt, UnimplInstALUExt},
+    };
+
+    intaluexttable[format->a1.x4][format->a1.x2b](format, cpu);
+}
+
 DECLINST(AddsImm14) {
     uint32_t imm14 = SignExt((format->a4.s << 13) | (format->a4.imm6d << 7) | (format->a4.imm7b), 14);
     printf("(qp %d) add r%d = 0x%08x, r%d\n", format->a4.qp, format->a4.r1, imm14, format->a4.r3);
@@ -32,7 +68,7 @@ DECLINST(AddsImm14) {
 
 DECLINST(ALUMMALU) {
     static HandleFn alummtable[2][4] = {
-        {UnimplInstALUMM, UnimplInstALUMM, AddsImm14,       UnimplInstALUMM},
+        {IntALUExt,       UnimplInstALUMM, AddsImm14,       UnimplInstALUMM},
         {UnimplInstALUMM, UnimplInstALUMM, UnimplInstALUMM, UnimplInstALUMM},
         
     };

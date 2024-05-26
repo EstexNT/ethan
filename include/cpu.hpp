@@ -16,6 +16,7 @@ public:
             uint64_t operator=(uint64_t v) {
                 if (id == GPR_ZEROREG) {
                     printf("trying to write zero gpr\n");
+                    exit(1); // TODO: should fault
                     return 0;
                 }
                 return (val = v);
@@ -23,6 +24,7 @@ public:
             bool operator=(bool b) {
                 if (id == GPR_ZEROREG) {
                     printf("trying to write nat to zero gpr\n");
+                    exit(1); // TODO: should fault
                     return 0;
                 }
                 return (nat = b);
@@ -63,7 +65,7 @@ public:
             int id;
             bool operator=(bool v) {
                 if (id == PR_ONEREG) {
-                    printf("trying to write one pr\n");
+                    //printf("trying to write one pr\n");
                     return 1;
                 }
                 return (val = v);
@@ -168,6 +170,8 @@ EC = 66         # Epilog Count Register
         DECMSR(0x181);
         DECMSR(0x1e8);
         DECMSR(0x1e9);
+        DECMSR(0x450);
+        DECMSR(0x581);
         DECMSR(0x5dd);
         DECMSR(0x600);
         DECMSR(0x601);
@@ -185,6 +189,8 @@ EC = 66         # Epilog Count Register
                 RD(0x181);
                 RD(0x1e8);
                 RD(0x1e9);
+                RD(0x450);
+                RD(0x581);
                 RD(0x5dd);
                 RD(0x600);
                 RD(0x601);
@@ -207,6 +213,8 @@ EC = 66         # Epilog Count Register
                 WR(0x181);
                 WR(0x1e8);
                 WR(0x1e9);
+                WR(0x450);
+                WR(0x581);
                 WR(0x5dd);
                 WR(0x600);
                 WR(0x601);

@@ -133,9 +133,39 @@ DECLINST(Rfi) {
     }
 }
 
+DECLINST(IndirectBranch) {
+    switch (format->b4.btype) {
+        case 0:
+            uint64_t tempIP;
+            printf("(qp %d) br%s%s%s b%d\n", format->b4.qp, 
+            GetBranchWhetherHintCompleterStr(format->b4.wh), 
+            GetSequentialPrefetchHintCompleterStr(format->b4.p),
+            GetBranchCacheDeallocHintCompleterStr(format->b4.d),
+            format->b4.b2);
+
+            tempIP = AlignIP(cpu->regs.br[format->b4.b2].val);
+            if (ISQP(b4)) {
+                cpu->branched = true;
+                cpu->regs.ip = tempIP;
+                if ((cpu->regs.psr.it && cpu->UnimplementedVirtualAddress(tempIP)) ||
+                    (!cpu->regs.psr.it && cpu->UnimplementedVirtualAddress(tempIP))) {
+                    cpu->UnimplementedInstructionAddressTrap(0, tempIP);
+                }
+                if (cpu->regs.psr.tb) {
+                    cpu->TakenBranchTrap();
+                }
+            }
+            break;
+        default:
+            fprintf(stderr, "unimpl indir branch btype=%d\n", format->b4.btype);
+            cpu->halt = true;
+            break;
+    }
+}
+
 DECLINST(MiscIndirectBranch) {
     static HandleFn miscbranchtable[16][4] = {
-        {UnimplInstMisc, UnimplInstMisc, UnimplInstMisc, UnimplInstMisc},
+        {UnimplInstMisc, UnimplInstMisc, IndirectBranch, UnimplInstMisc},
         {UnimplInstMisc, UnimplInstMisc, UnimplInstMisc, UnimplInstMisc},
         {UnimplInstMisc, UnimplInstMisc, UnimplInstMisc, UnimplInstMisc},
         {UnimplInstMisc, UnimplInstMisc, UnimplInstMisc, UnimplInstMisc},

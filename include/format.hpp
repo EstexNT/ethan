@@ -334,6 +334,19 @@ struct Ia64Format {
             uint64_t const5:4;
         } b3; // IP-Relative Call
         struct {
+            uint64_t qp:6;
+            uint64_t btype:3;
+            uint64_t:3;
+            uint64_t p:1;
+            uint64_t b2:3;
+            uint64_t:11;
+            uint64_t x6:6;
+            uint64_t wh:2;
+            uint64_t d:1;
+            uint64_t:1;
+            uint64_t const0:4;
+        } b4; // Indirect Branch
+        struct {
             uint64_t qp:6; // 0
             uint64_t:21;
             uint64_t x6:6;
