@@ -36,7 +36,7 @@ DECLINST(UnimplInstTbit) {
 
 DECLINST(MovFromIP) {
     printf("(qp %d) mov r%d = ip\n", format->i25.qp, format->i25.r1);
-    if (cpu->regs.pr[format->i25.qp].val) {
+    if (ISQP(i25)) {
         cpu->regs.CheckTargetRegister(format->i25.r1);
         cpu->regs.gpr[format->i25.r1] = cpu->regs.ip;
         cpu->regs.gpr[format->i25.r1] = false;
@@ -45,13 +45,13 @@ DECLINST(MovFromIP) {
 DECLINST(NopI) {
     uint32_t imm = (format->i19.i << 20) | format->i19.imm20a;
     printf("(qp %d) nop.i 0x%08x\n", format->i19.qp, imm);
-    if (cpu->regs.pr[format->i19.qp].val) {
+    if (ISQP(i19)) {
         // no operation
     }
 }
 DECLINST(MovFromB) {
     printf("(qp %d) mov r%d = b%d\n", format->i22.qp, format->i22.r1, format->i22.b2);
-    if (cpu->regs.pr[format->i22.qp].val) {
+    if (ISQP(i22)) {
         cpu->regs.CheckTargetRegister(format->i22.r1);
         cpu->regs.gpr[format->i22.r1] = cpu->regs.br[format->i22.b2].val;
         cpu->regs.gpr[format->i22.r1] = false;
@@ -59,7 +59,7 @@ DECLINST(MovFromB) {
 }
 DECLINST(MoviFromAr) {
     printf("(qp %d) mov.i r%d = ar%d\n", format->i28.qp, format->i28.r1, format->i28.ar3);
-    if (cpu->regs.pr[format->i28.qp].val) {
+    if (ISQP(i28)) {
         if (cpu->regs.IsReservedReg(Ia64Regs::AR_I_TYPE, format->i28.ar3)) {
             cpu->IllegalOperationFault();
         }
@@ -77,7 +77,7 @@ DECLINST(MoviFromAr) {
 DECLINST(MoviToArImm8) {
     uint8_t imm8 = (format->i27.s << 7)| (format->i27.imm7b);
     printf("(qp %d) mov.i ar%d = 0x%02x\n", format->i27.qp, format->i27.ar3, imm8);
-    if (cpu->regs.pr[format->i27.qp].val) {
+    if (ISQP(i27)) {
         if (cpu->regs.IsReservedReg(Ia64Regs::AR_I_TYPE, format->i27.ar3)) {
             cpu->IllegalOperationFault();
         }
@@ -107,7 +107,7 @@ DECLINST(MoviToArImm8) {
 }
 DECLINST(MoviToAr) {
     printf("(qp %d) mov.i ar%d = r%d\n", format->i26.qp, format->i26.ar3, format->i26.r2);
-    if (cpu->regs.pr[format->i26.qp].val) {
+    if (ISQP(i26)) {
         if (cpu->regs.IsReservedReg(Ia64Regs::AR_I_TYPE, format->i26.ar3)) {
             cpu->IllegalOperationFault();
         }
@@ -164,7 +164,7 @@ DECLINST(MiscExt) {
 DECLINST(MovToB) {
     printf("(qp %d) mov%s%s%s b%d = r%d, %x\n", format->i21.qp, (format->i21.x) ? ".ret" : "",
     GetMoveToBRWhetherHintStr(format->i21.wh), Hint::GetBranchImportanceHintStr(format->i21.ih), format->i21.b1, format->i21.r2, format->i21.timm9c);
-    if (cpu->regs.pr[format->i21.qp].val) {
+    if (ISQP(i21)) {
         uint64_t tmp_tag = cpu->regs.ip + SignExt(format->i21.timm9c << 4, 13);
         if (cpu->regs.gpr[format->i21.r2].nat) {
             cpu->RegisterNatConsumptionFault(0);
@@ -191,7 +191,7 @@ DECLINST(Deposit) {
     //merge_form, register_form
 
     printf("(qp %d) dep r%d = r%d, r%d, %ld, %ld\n", format->i15.qp, format->i15.r1, format->i15.r2, format->i15.r3, pos6, len4);
-    if (cpu->regs.pr[format->i15.qp].val) {
+    if (ISQP(i15)) {
         cpu->regs.CheckTargetRegister(format->i15.r1);
 
         uint64_t tmpLen = len4;
@@ -210,7 +210,7 @@ DECLINST(Deposit) {
 
 DECLINST(ExtrU) {
     printf("(qp %d) extr.u r%d = r%d, %d, %d\n", format->i11.qp, format->i11.r1, format->i11.r3, format->i11.pos6b, format->i11.len6d + 1);
-    if (cpu->regs.pr[format->i11.qp].val) {
+    if (ISQP(i11)) {
         cpu->regs.CheckTargetRegister(format->i11.r1);
         
         uint32_t tmp_len = format->i11.len6d;
@@ -228,7 +228,7 @@ DECLINST(DepImm1) {
     uint64_t imm1 = SignExt(format->i14.s, 1);
 
     printf("(qp %d) dep r%d = %ld, r%d, %ld, %ld\n", format->i14.qp, format->i14.r1, imm1, format->i14.r3, pos6, len4);
-    if (cpu->regs.pr[format->i14.qp].val) {
+    if (ISQP(i14)) {
         cpu->regs.CheckTargetRegister(format->i14.r1);
 
         uint64_t tmpLen = len4;
@@ -247,7 +247,7 @@ DECLINST(DepImm1) {
 DECLINST(TBitZ) {
     printf("(qp %d) tbit.z p%d, p%d = r%d, %d\n", format->i16.qp, format->i16.p1, format->i16.p2, format->i16.r3, format->i16.pos6b);
 
-    if (cpu->regs.pr[format->i16.qp].val) {
+    if (ISQP(i16)) {
         if (format->i16.p1 == format->i16.p2) {
             cpu->IllegalOperationFault();
         }

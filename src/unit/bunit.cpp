@@ -46,7 +46,7 @@ DECLINST(BrCond) {
         GetBranchCacheDeallocHintCompleterStr(format->b1.d),
         tempIP
         );
-    if (cpu->regs.pr[format->b1.qp].val) {
+    if (ISQP(b1)) {
         cpu->branched = true;
         cpu->regs.ip = tempIP;
         if ((cpu->regs.psr.it && cpu->UnimplementedVirtualAddress(tempIP)) ||

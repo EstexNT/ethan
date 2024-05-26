@@ -25,14 +25,14 @@ DECLINST(UnimplInstOpX3) {
 // op = 0 //
 DECLINST(SrlzD) {
     printf("(qp %d) srlz.d\n", format->m24.qp);
-    if (cpu->regs.pr[format->m24.qp].val) {
+    if (ISQP(m24)) {
         // TODO:
         // cpu->DataSerialize();
     }
 }
 DECLINST(SrlzI) {
     printf("(qp %d) srlz.i\n", format->m24.qp);
-    if (cpu->regs.pr[format->m24.qp].val) {
+    if (ISQP(m24)) {
         // TODO:
         // cpu->InstructionSerialize();
     }
@@ -40,14 +40,14 @@ DECLINST(SrlzI) {
 DECLINST(NopM) {
     uint32_t imm = (format->m37.i << 20) | format->m37.imm20a;
     printf("(qp %d) nop.m 0x%08x\n", format->m37.qp, imm);
-    if (cpu->regs.pr[format->m37.qp].val) {
+    if (ISQP(m37)) {
         // no operation
     }
 }
 DECLINST(Rsm) {
     uint32_t imm24 = (format->m44.i << 23) | (format->m44.i2d << 21) | (format->m44.imm21a);
     printf("(qp %d) rsm 0x%06x\n", format->m44.qp, imm24);
-    if (cpu->regs.pr[format->m44.qp].val) {
+    if (ISQP(m44)) {
         if (cpu->regs.psr.cpl != 0) {
             cpu->PrivilegedOperationFault(0);
         }
@@ -115,7 +115,7 @@ DECLINST(SysMemMgmt0) {
 
 DECLINST(MovFromCPUID) {
     printf("(qp %d) mov r%d = cpuid[r%d]\n", format->m43.qp, format->m43.r1, format->m43.r3);
-    if (cpu->regs.pr[format->m43.qp].val) {
+    if (ISQP(m43)) {
         uint8_t tmp_index = uint8_t(cpu->regs.gpr[format->m43.r3].val & 0xff);
         cpu->regs.CheckTargetRegister(format->m43.r1);
         if (cpu->regs.gpr[format->m43.r1].nat) {
@@ -131,7 +131,7 @@ DECLINST(MovFromCPUID) {
 
 DECLINST(MovMToAR) {
     printf("(qp %d) mov.m ar%d = r%d\n", format->m29.qp, format->m29.ar3, format->m29.r2);
-    if (cpu->regs.pr[format->m29.qp].val) {
+    if (ISQP(m29)) {
         if (cpu->regs.IsReservedReg(Ia64Regs::AR_TYPE, format->m29.ar3)) {
             cpu->IllegalOperationFault();
         }
@@ -169,7 +169,7 @@ DECLINST(MovMToAR) {
 DECLINST(MovFromMSR) {
     // not in the doc!
     printf("(qp %d) mov r%d = msr[r%d]\n", format->m43.qp, format->m43.r1, format->m43.r3);
-    if (cpu->regs.pr[format->m43.qp].val) {
+    if (ISQP(m43)) {
         uint64_t tmp_index = cpu->regs.gpr[format->m43.r3].val;
         cpu->regs.CheckTargetRegister(format->m43.r1);
         if (cpu->regs.psr.cpl != 0) {
@@ -188,7 +188,7 @@ DECLINST(MovFromMSR) {
 DECLINST(MovToMSR) {
     // not in the doc!
     printf("(qp %d) mov msr[r%d] = r%d\n", format->m42.qp, format->m42.r3, format->m42.r2);
-    if (cpu->regs.pr[format->m42.qp].val) {
+    if (ISQP(m42)) {
         uint64_t tmp_index = cpu->regs.gpr[format->m42.r3].val;
         if (cpu->regs.psr.cpl != 0) {
             cpu->PrivilegedOperationFault(0);
@@ -206,7 +206,7 @@ DECLINST(MovToMSR) {
 }
 DECLINST(MovFromPSR) {
     printf("(qp %d) mov r%d = psr\n", format->m36.qp, format->m36.r1);
-    if (cpu->regs.pr[format->m36.qp].val) {
+    if (ISQP(m36)) {
         cpu->regs.CheckTargetRegister(format->m36.r1);
         if (cpu->regs.psr.cpl != 0) {
             cpu->PrivilegedOperationFault(0);
@@ -219,7 +219,7 @@ DECLINST(MovFromPSR) {
 }
 DECLINST(MovFromCR) {
     printf("(qp %d) mov r%d = cr%d\n", format->m33.qp, format->m33.r1, format->m33.cr3);
-    if (cpu->regs.pr[format->m33.qp].val) {
+    if (ISQP(m33)) {
         if (cpu->regs.IsReservedReg(Ia64Regs::RegType::CR_TYPE, format->m33.cr3) || 
         cpu->regs.psr.ic && IsInterruptionCr(format->m33.cr3)) {
             cpu->IllegalOperationFault();
@@ -241,7 +241,7 @@ DECLINST(MovFromCR) {
 }
 DECLINST(MovToCR) {
     printf("(qp %d) mov cr%d = r%d\n", format->m32.qp, format->m32.cr3, format->m32.r2);
-    if (cpu->regs.pr[format->m32.qp].val) {
+    if (ISQP(m32)) {
         if (cpu->regs.IsReservedReg(Ia64Regs::RegType::CR_TYPE, format->m32.cr3) || 
         cpu->regs.IsReadOnlyRegister(Ia64Regs::RegType::CR_TYPE, format->m32.cr3) ||
         cpu->regs.psr.ic && IsInterruptionCr(format->m32.cr3)) {

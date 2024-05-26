@@ -21,7 +21,7 @@ DECLINST(UnimplInstOpX0) {
 DECLINST(NopF) {
     uint32_t imm = (format->f15.i << 20) | format->f15.imm20a;
     printf("(qp %d) nop.f 0x%08x\n", format->f15.qp, imm);
-    if (cpu->regs.pr[format->f15.qp].val) {
+    if (ISQP(f15)) {
         // no operation
     }
 }

@@ -11,7 +11,8 @@ struct Ia64Format {
 
         // Common //
         struct {
-            uint64_t:37;
+            uint64_t qp:6;
+            uint64_t:31;
             uint64_t op:4;
         } common;
 
@@ -62,6 +63,18 @@ struct Ia64Format {
             uint64_t tb:1;
             uint64_t constCtoE:4;
         } a6; // Compare
+        struct {
+            uint64_t qp:6;
+            uint64_t p1:6;
+            uint64_t c:1;
+            uint64_t const0:7;
+            uint64_t r3:7;
+            uint64_t p2:6;
+            uint64_t ta:1;
+            uint64_t x2:2;
+            uint64_t s:1;
+            uint64_t constCtoE:4;
+        } a7; // Compare to Zero
         struct {
             uint64_t qp:6;
             uint64_t p1:6;
@@ -391,3 +404,4 @@ struct Ia64Format {
 #pragma pack(pop)
 
 #define DECLINST(name) static void name(Ia64Format *format, Ia64Cpu *cpu)
+#define ISQP(fmt) (cpu->regs.pr[format->fmt.qp].val)
