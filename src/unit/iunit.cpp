@@ -236,8 +236,8 @@ DECLINST(DepImm1) {
             tmpLen = 64 - pos6;
         }
         uint64_t mask = (1 << tmpLen) - 1;
-        cpu->regs.gpr[format->i14.r1] = ((imm1 & mask) << pos6) 
-                                      | ((cpu->regs.gpr[format->i14.r3].val & ~mask) << pos6);
+        cpu->regs.gpr[format->i14.r1] = (cpu->regs.gpr[format->i14.r3].val & ~(mask << pos6))
+                                        | ((imm1 & mask) << tmpLen);
         cpu->regs.gpr[format->i14.r1] = cpu->regs.gpr[format->i14.r3].nat;
     
     }

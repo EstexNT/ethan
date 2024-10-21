@@ -152,6 +152,8 @@ EC = 66         # Epilog Count Register
     struct Msr {
         #define DECMSR(off) \
             uint64_t msr_##off = 0;
+        #define DECMSRA(off, val) \
+            uint64_t msr_##off = val;
         
         #define RD(off) \
             case off: \
@@ -178,7 +180,7 @@ EC = 66         # Epilog Count Register
         DECMSR(0x602);
         DECMSR(0x60d);
         DECMSR(0x60e);
-        DECMSR(0x612);
+        DECMSRA(0x612, 0xf00); // assumed
         DECMSR(0x615);
 
         uint64_t Read(uint64_t index) {
@@ -227,6 +229,12 @@ EC = 66         # Epilog Count Register
                     fprintf(stderr, "unimplemented write msr 0x%lx\n", index);
                     exit(1);
                     return;
+            }
+        }
+        void Update(void) {
+            // unknown value that the bios waits for
+            if (!(msr_0x612 & 0x200)) {
+                msr_0x612 |= 0x40;
             }
         }
     } msr; // model-specific reg

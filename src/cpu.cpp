@@ -98,11 +98,7 @@ void Ia64Cpu::run(void) {
             return;
         }
 
-        // TODO: unhardcode
-        if (regs.ip == 0xffff7e50) {
-            // get out of an infinite loop waiting for.. something
-            regs.msr.Write(0x612, regs.msr.Read(0x612) | 0b1000000);
-        }
+        regs.msr.Update();
         
         Memory::ReadAt<Ia64Bundle>(&bundle, regs.ip);
         printf("%lx:\n", regs.ip);
