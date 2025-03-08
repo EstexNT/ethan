@@ -243,6 +243,16 @@ struct Ia64Format {
         } m29; // Move to AR
         struct {
             uint64_t qp:6;
+            uint64_t r1:7;
+            uint64_t:7;
+            uint64_t ar3:7;
+            uint64_t x6:6;
+            uint64_t x3:3;
+            uint64_t:1;
+            uint64_t const1:4;
+        } m31; // Move from AR
+        struct {
+            uint64_t qp:6;
             uint64_t:7;
             uint64_t r2:7;
             uint64_t cr3:7;

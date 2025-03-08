@@ -78,6 +78,13 @@ DECLINST(Rsm) {
 #undef BLEH
     }
 }
+DECLINST(SyncI) {
+    printf("(qp %d) sync.i\n", format->m24.qp);
+    if (ISQP(m24)) {
+        // TODO:
+        // cpu->InstructionSynchronize();
+    }
+}
 
 DECLINST(SysMemMgmt0Ext) {
     //                         [x4][x2]
@@ -85,7 +92,7 @@ DECLINST(SysMemMgmt0Ext) {
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, SrlzD          },
         { NopM,           UnimplInstOpX3, UnimplInstOpX3, SrlzI          },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
-        { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
+        { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, SyncI          },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
@@ -266,13 +273,31 @@ DECLINST(MovToCR) {
         }
     }
 }
+DECLINST(MovMFromAR) {
+    printf("(qp %d) mov.m r%d = ar%d\n", format->m31.qp, format->m31.r1, format->m31.ar3);
+    if (ISQP(m31)) {
+        if (cpu->regs.IsReservedReg(Ia64Regs::AR_TYPE, format->m31.ar3)) {
+            cpu->IllegalOperationFault();
+        }
+        cpu->regs.CheckTargetRegister(format->m31.r1);
+        if (((format->m31.ar3 == Ia64Regs::Ar::BSPSTORE) || (format->m31.ar3 == Ia64Regs::Ar::RNAT)) && 
+        (cpu->regs.ar[Ia64Regs::Ar::Type::RSC].val & 3)) {
+            cpu->IllegalOperationFault();
+        }
+        if (format->m31.ar3 == Ia64Regs::Ar::ITC && cpu->regs.psr.si && cpu->regs.psr.cpl != 0) {
+            cpu->PrivilegedRegisterFault();
+        }
+        cpu->regs.gpr[format->m31.r1] = (cpu->regs.IsIgnoredReg(format->m31.ar3)) ? 0 : cpu->regs.ar[format->m31.ar3].val;
+        cpu->regs.gpr[format->m31.r1] = false;
+    }
+}
 
 
 DECLINST(SysMemMgmt1Ext) {
     static HandleFn sysexttable1[16][4] = {
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
-        { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
+        { UnimplInstOpX3, UnimplInstOpX3, MovMFromAR,     UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3, UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, MovFromCR,      UnimplInstOpX3 },
         { UnimplInstOpX3, UnimplInstOpX3, MovFromPSR,     UnimplInstOpX3 },

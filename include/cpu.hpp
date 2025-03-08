@@ -173,6 +173,7 @@ EC = 66         # Epilog Count Register
         DECMSR(0x1e8);
         DECMSR(0x1e9);
         DECMSR(0x450);
+        DECMSR(0x4c4);
         DECMSR(0x581);
         DECMSR(0x5dd);
         DECMSR(0x600);
@@ -192,6 +193,7 @@ EC = 66         # Epilog Count Register
                 RD(0x1e8);
                 RD(0x1e9);
                 RD(0x450);
+                RD(0x4c4);
                 RD(0x581);
                 RD(0x5dd);
                 RD(0x600);
@@ -216,6 +218,7 @@ EC = 66         # Epilog Count Register
                 WR(0x1e8);
                 WR(0x1e9);
                 WR(0x450);
+                WR(0x4c4);
                 WR(0x581);
                 WR(0x5dd);
                 WR(0x600);
