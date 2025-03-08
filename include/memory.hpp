@@ -101,7 +101,7 @@ static inline bool LoadBIOS(char *biosFileName) {
         WriteAt<uint8_t[MEMLIST_MEMSIZE]>(&tempbuf, BIOS_ROM + i);
         i += MEMLIST_MEMSIZE;
     }
-    printf(" Done.\n");
+    printf(" Done\n");
     biosf.close();
     return true;
 }

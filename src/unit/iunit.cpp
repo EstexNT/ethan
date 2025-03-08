@@ -243,6 +243,25 @@ DECLINST(DepImm1) {
     }
 }
 
+DECLINST(DepZImm8) {
+    uint64_t len6 = format->i13.len6d + 1;
+    uint64_t pos6 = 63 - format->i13.cpos6c;
+    uint64_t imm8 = SignExt((format->i13.s << 7) | (format->i13.imm7b), 8);
+
+    printf("(qp %d) dep.z r%d = %ld, %ld, %ld\n", format->i13.qp, format->i13.r1, imm8, pos6, len6);
+    if (ISQP(i13)) {
+        cpu->regs.CheckTargetRegister(format->i13.r1);
+
+        uint64_t tmpLen = len6;
+        if ((pos6 + tmpLen) > 64) {
+            tmpLen = 64 - pos6;
+        }
+        uint64_t mask = (1 << tmpLen) - 1;
+        cpu->regs.gpr[format->i13.r1] = ((imm8 & mask) << tmpLen);
+        cpu->regs.gpr[format->i13.r1] = false;
+    }
+}
+
 
 DECLINST(TBitZ) {
     printf("(qp %d) tbit.z p%d, p%d = r%d, %d\n", format->i16.qp, format->i16.p1, format->i16.p2, format->i16.r3, format->i16.pos6b);
@@ -287,7 +306,7 @@ DECLINST(ShiftTestBit) {
         },
         {
             {UnimplInstOp5, UnimplInstOp5, UnimplInstOp5, DepImm1      },
-            {UnimplInstOp5, UnimplInstOp5, UnimplInstOp5, UnimplInstOp5},
+            {UnimplInstOp5, DepZImm8,      UnimplInstOp5, UnimplInstOp5},
         },
         
     };

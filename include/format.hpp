@@ -100,8 +100,20 @@ struct Ia64Format {
             uint64_t x:1;
             uint64_t x2:2;
             uint64_t:1;
-            uint64_t const5:5;
+            uint64_t const5:4;
         } i11; // Extract
+        struct {
+            uint64_t qp:6;
+            uint64_t r1:7;
+            uint64_t imm7b:7;
+            uint64_t cpos6c:6;
+            uint64_t y:1;
+            uint64_t len6d:6;
+            uint64_t x:1;
+            uint64_t x2:2;
+            uint64_t s:1;
+            uint64_t const5:4;
+        } i13; // Dep.Z Imm8
         struct {
             uint64_t qp:6;
             uint64_t r1:7;
